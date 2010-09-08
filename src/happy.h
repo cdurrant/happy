@@ -131,6 +131,13 @@ typedef struct {
 }
 KV;
 
+typedef struct {
+  char *key;
+  int id;;
+}
+PARENT_KEY;
+
+
 /* function prototypes */
 
 CHROM_PAIR *new_chrom_pair( int markers );
