@@ -1,10 +1,10 @@
-Package: happy
-Version: 2.1
-Date: 2008-01-31
+Package: happy.hbrem
+Version: 2.2
+Date: 2009-05-05
 Title: Quantitative Trait Locus genetic analysis in Heterogeneous Stocks
 Author: Richard Mott <Richard.Mott@well.ox.ac.uk>	
 Maintainer: Richard Mott <Richard.Mott@well.ox.ac.uk>
-Depends: R (>= 2.6.0), g.data
+Depends: R (>= 2.6.0), g.data, multicore
 Description: happy is an R interface into the HAPPY C package
  for fine-mapping Quantitative Trait Loci (QTL) in Heterogenous
  Stocks (HS). An HS is an advanced intercross between (usually
@@ -16,4 +16,4 @@ Description: happy is an R interface into the HAPPY C package
  range of models to be fit to the data.
 License: GPL version 2 or newer
 URL: http://www.r-project.org, http://www.well.ox.ac.uk/happy
-Packaged: Fri Mar  7 10:20:49 2008; rmott
+Packaged: 2009-11-30 15:55:33 UTC; rmott
