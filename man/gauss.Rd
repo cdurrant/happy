@@ -93,7 +93,7 @@ gaussian.gr( p, d=NULL )
 	\item{eps}{ the terminatation accuracy in the model fitting : the log likelihood must change by less than eps in successive iterations}
 	\item{df}{ the degress of freedom to use. If NULL then this is computed as the rank of the data}
 	\item{n}{ the number of observations with non-missing phenotypes}
-	\item{sigma2} {the variance of the errors in the data}
+	\item{sigma2}{the variance of the errors in the data}
 	\item{params}{ a list with two components, beta = the group means and sigma = the standard deviation}
 	\item{p}{ vector of paramters. For internal use only}
 }
