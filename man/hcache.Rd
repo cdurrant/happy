@@ -7,7 +7,7 @@
 
 \title{Save HAPPY design matrices and genotypes to disk for rapid
   reloading}
-\description{ \code{save.genome()} will persist the happy design matrices or
+\description{ \code{save.genome() will persist the happy design matrices or
   genotypes from a series of happy objects to disk as a collection of R delayed data packages (as implemented in the
   package \code{g.data}). \code{load.genome()} "reloads" the data, although the
   matrices are not actually loaded  into memory until
@@ -22,7 +22,8 @@
 \usage{
 save.genome( gdir, sdir, prefix, chrs=NULL, file.format="ped",
 mapfile=NULL,ancestryfile=NULL, generations=50, phase="unknown", haploid=FALSE )
-genome <- load.genome( sdir, use.X=TRUE, chr=the.chromosomes(use.X=use.X) )
+genome <- load.genome( sdir, use.X=TRUE,
+chr=the.chromosomes(use.X=use.X), n.chr=NA )
 marker.list <- load.markers( genome, markers )
 save.happy( h, pkg, dir, model="additive" )
 }
@@ -38,6 +39,8 @@ save.happy( h, pkg, dir, model="additive" )
     \code{gdir} named like \code{chrN.prefix.*} where N is the
     chromosome number (1...20, X, Y), as defined in \code{chrs}.}
   \item{chrs}{ List of chromosome numbers to be processed.}
+  \item{n.chr}{ Alternative way of specifying the number of
+    chromosomes. Must be an integer or NA.}
   \item{use.X}{ logical to determine whether to use X-chromsome data, in
     load.genome().}
   \item{file.format}{Defines the input genotype file format, either
