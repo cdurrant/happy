@@ -119,7 +119,8 @@ hdesign <- function( h, marker, model='additive', mergematrix=NULL ) {
       if ( h$haploid  ) {
         d <- .Call( "haploid_happydesign", handle, marker,  PACKAGE="happy.hbrem")
         if ( ! is.null(d) ) 
-          colnames(d) <- h$nam
+          if ( model == 'additive' ) colnames(d) <- h$nam
+          else colnames(d) <- h$nam2
       }
       else {
         d <- .Call( "happydesign", handle, marker, model, PACKAGE="happy.hbrem")
@@ -1674,14 +1675,14 @@ save.genome <- function ( gdir, sdir, prefix, chrs=NULL,
   dir.create(genotype)
 
   if ( mc.cores <=1 ) {
-    lapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype) 
+    lapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, full, genotype) 
   }
   else	{
-     mclapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype, mc.cores=mc.cores) 
+     mclapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, full, genotype, mc.cores=mc.cores) 
   }
 }
 
-save.happy.internal <- function( chr, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype) { 
+save.happy.internal <- function( chr, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, full, genotype) { 
 	h <- happy( paste( gdir, chr, prefix, ".data", sep="" ),
         	       paste( gdir, chr, prefix, ".alleles", sep="" ),
                	file.format=file.format,
@@ -1877,6 +1878,14 @@ happy.load.data <- function (item, dir) # replaces calls to g.data.get, to make 
     {       
         load(filename.post2009, env)
         return ( get(item, envir = env ) )
+    }
+    mm = make.names(item)
+    filename.make.names = file.path(dir,paste(gsub("([[:upper:]])", "@\\1", mm), "RData", sep = "."))
+
+    if (file.exists(filename.make.names))
+    {       
+        load(filename.make.names, env)
+        return ( get(mm, envir = env ) )
     }
     stop("Could not find data for ", item, " in package ", dir)
 }
