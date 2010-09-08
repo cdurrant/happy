@@ -1,7 +1,6 @@
 epistasis               Analysis of Epistasis between Markers
 gfit                    Fit a Gaussian Mixture Model to an object
                         returned by happy()
-happy-internal          Internal Happy Functions
 happyplot               Plotting functions for happy model fits
 hdesign                 Extract design matrix or genotypes for a
                         specific marker interval from a happy object
@@ -16,3 +15,4 @@ mergeprepare            Perform tests to determine whether individual
                         polymorphisms could have given rise to a QTL
 save.genome             Save HAPPY design matrices and genotypes to
                         disk for rapid reloading
+hbrem			Hierchical Bayes QTL Mapping
