@@ -1,7 +1,8 @@
-.packageName <- "happy_2.0.1"
+.packageName <- "happy.hbrem_2.2"
 
 library(MASS)
 library(g.data)
+library(multicore)
 	
                                         # C interface to read in .data and .alleles files, perform DP and create a happy object
                                         #
@@ -14,55 +15,44 @@ library(g.data)
                                         # happy$handle integer handle which maps the R happy object to the corresponding C QTL object
 
 
-happy<- function( datafile, allelesfile, generations=200,
-                 standardise=FALSE, phase="unknown",
+happy <- function( datafile, allelesfile, generations=200, phase="unknown",
                  file.format="happy", missing.code="NA", do.dp=TRUE,
                  min.dist=1.0e-5, mapfile=NULL, ancestryfile=NULL, haploid=FALSE ) {
 
   gen <- as.numeric(generations)+0
   if ( phase=="estimate" ) file.format  <- "ped"
-  do.dp = ifelse( do.dp, 1, 0 )
-  hap <- ifelse( haploid, 1, 0 );
-  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp, min.dist=min.dist, haploid=hap, ancestryfile=ancestryfile, PACKAGE="happy" )
-  if ( standardise ) {
-    m <- mean(h$phenotype)
-    s <- sd(h$phenotype)
-    h$phenotype <- (h$phenotype-m)/s
-    cat('\nPhenotypes have been standardised to mean 0, variance 1\n')
-  }
+
+  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp=as.integer(do.dp), min.dist=min.dist, haploid=as.integer(haploid), ancestryfile=ancestryfile, PACKAGE="happy.hbrem" )
 
   h$phase <- phase
   h$haploid <- haploid
-  h$nam <- make.names(h$strains)
-  nam2 <- c()
-  ns <- length(h$nam)
-  for(i in 1:ns) {
-	for(j in 1:i) {
-		nam2 <- c( nam2, paste(h$nam[i], ".", h$nam[j], sep=""))
-	}
-  }
-  h$nam2 <- nam2
 
-  nam3 <- c()
-  for(i in 1:ns) {
-	for(j in 1:ns) {
-		nam3 <- c( nam3, paste(h$nam[i], ".", h$nam[j], sep=""))
-	}
-  }
-  h$nam3 <- nam3
+  strain.names    <- make.names(h$strains)
+  num.strains     <- length(h$strains)
+  h$names.additive <- strain.names
+
+  diplotype.names <- matrix(kronecker(strain.names, strain.names, paste, sep="."), nrow=num.strains)
+  h$names.full.symmetric <- c( diag(diplotype.names), diplotype.names[upper.tri(diplotype.names, diag=FALSE)])
+  h$names.full.asymmetric <- c( t(diplotype.names) ) # assumes row major order, ie, (row1, row2, etc), in C object
+  
+  # for backwards compatibility
+  h$nam <- strain.names
+  h$nam2 <- h$names.full.symmetric
+  h$nam3 <- h$names.full.asymmetric
 
   if ( ! is.null(mapfile)) {
-    map <- read.table(mapfile, "\t", header=TRUE)
+    map <- read.delim(mapfile)
     if ( !is.null(map$marker) && ! is.null(map$bp)) {
       hbp <- data.frame(markers=h$markers,bp=rep(NA,length(h$markers)))
       h$bp <- map$bp[match(hbp$markers,map$marker)]
     }
     else
-      warning( "incorrect column names found in mapfile ", mapfile , "\n")
+      stop( "incorrect column names found in mapfile ", mapfile , "\n")
   }
   
   return(h)
 }
+
 
 happy.matrices <- function( h ) {
 
@@ -127,12 +117,12 @@ hdesign <- function( h, marker, model='additive', mergematrix=NULL ) {
     else { # data are in C memory
       handle <- as.numeric(h$handle)+0
       if ( h$haploid  ) {
-        d <- .Call( "haploid_happydesign", handle, marker,  PACKAGE="happy")
+        d <- .Call( "haploid_happydesign", handle, marker,  PACKAGE="happy.hbrem")
         if ( ! is.null(d) ) 
           colnames(d) <- h$nam
       }
       else {
-        d <- .Call( "happydesign", handle, marker, model, PACKAGE="happy")
+        d <- .Call( "happydesign", handle, marker, model, PACKAGE="happy.hbrem")
         if ( ! is.null(d) ) {
           if ( model == 'additive' ) colnames(d) <- h$nam
           else colnames(d) <- h$nam2
@@ -170,12 +160,12 @@ hnonrecomb<- function( h, marker=NULL, do.mean=TRUE ) {
      nm <- length(h$markers)-1
      r <- vector("numeric",length=nm)
      for(m in 1:nm) {
-       x <- .Call( "happynonrecomb", handle, m, PACKAGE="happy")
+       x <- .Call( "happynonrecomb", handle, m, PACKAGE="happy.hbrem")
        r[m] <- 0.5*mean(x)
      }
    }
    else {
-     r <- .Call( "happynonrecomb", handle, marker, PACKAGE="happy")
+     r <- .Call( "happynonrecomb", handle, marker, PACKAGE="happy.hbrem")
      r <- 0.5*r
      if ( do.mean )
        r <- mean(r)
@@ -187,22 +177,30 @@ hnonrecomb<- function( h, marker=NULL, do.mean=TRUE ) {
 hprob <- function( h, marker=NULL ) {
 
    handle <- as.numeric(h$handle)+0
-   p <- .Call( "happyprobs", handle, marker, PACKAGE="happy")
+   p <- .Call( "happyprobs", handle, marker, PACKAGE="happy.hbrem")
    colnames(p) <- h$nam2
    return(p)
 }
 
-hprob2 <- function( h, marker=NULL ) {
+hprob2 <- function( h, marker=NULL, symmetrize=FALSE ) {
    handle <- as.numeric(h$handle)+0
-   p <- .Call( "happyprobs2", handle, marker, PACKAGE="happy")
-   colnames(p) <- h$nam3
+   if ( symmetrize==TRUE )
+     symmetrize=1
+   else
+     symmetrize=0
+
+   p <- .Call( "happyprobs2", handle, marker, symmetrize, PACKAGE="happy.hbrem")
+   if ( symmetrize==1 )
+     colnames(p) <- h$nam2
+   else
+     colnames(p) <- h$nam3
    return(p)
 }
 
 h.sum.prob2 <- function( h, marker=NULL ) { # for Caroline - the sum of squares of the probabilities
    handle <- as.numeric(h$handle)+0
    if ( ! is.null( marker ) ) {
-     p <- .Call( "happyprobs2", handle, marker, PACKAGE="happy")
+     p <- .Call( "happyprobs2", handle, marker, PACKAGE="happy.hbrem")
      p2 <- apply( p*p, 1, sum )
      return(p2)
    }
@@ -210,7 +208,7 @@ h.sum.prob2 <- function( h, marker=NULL ) { # for Caroline - the sum of squares 
      nm <- length(h$markers)-1
      mat <- matrix( nrow=length(h$subjects), ncol=nm )
      for(i in 1:nm ) {
-       p <- .Call( "happyprobs2", handle, i, PACKAGE="happy")
+       p <- .Call( "happyprobs2", handle, i, PACKAGE="happy.hbrem")
        mat[,i] <- apply( p*p, 1, sum )
      }
      rownames(mat) <- h$subjects
@@ -221,16 +219,23 @@ h.sum.prob2 <- function( h, marker=NULL ) { # for Caroline - the sum of squares 
 
 
 hgenotype <- function( h, marker=NULL, collapse=FALSE, sep="" ) {
-	handle <- as.numeric(h$handle)+0
-   	g <- .Call( "happygenotype", handle, marker, PACKAGE="happy")
-        if ( collapse ) {
-          y <- paste( g[,1], g[,2], sep=sep )
-          g <- ifelse ( y == "NANA", NA, y )
-        }
-        else {
-          colnames(g) <- c("allele1", "allele2")
-        }
-        return(g)
+
+  if ( class(h) == "happy" ) {
+    handle <- as.numeric(h$handle)+0
+    g <- .Call( "happygenotype", handle, marker, PACKAGE="happy.hbrem")
+  }
+  else if ( class(h) == "happy.genome" ) { # delayed data package
+    loaded.markers <- load.markers( h, c(marker), model="genotype" )
+    g <- loaded.markers[[1]]
+  }
+  if ( collapse ) {
+    y <- paste( g[,1], g[,2], sep=sep )
+    g <- ifelse ( y == "NANA", NA, y )
+  }
+  else {
+    colnames(g) <- c("allele1", "allele2")
+  }
+  return(g)
 }
 	
 
@@ -243,13 +248,28 @@ hgenotype <- function( h, marker=NULL, collapse=FALSE, sep="" ) {
                                         # return value is a table giving the logP values for each marker tested
 
 hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0 ) {
-  map <- h$map
 
-  if ( is.null(markers) ) 
-    markers <- h$markers[1:length(h$markers)-1]
+  if ( class(h) == "happy.genome" ) {
+    if ( !is.null( h[[model]] ) )
+      map <- h[[model]]$map
+    if ( is.null(markers) ) {
+      nm <- length(h[[model]]$markers)-1
+      markers <- h[[model]]$markers[1:nm]
+    }
+    if ( is.null(phenotype)) {
+      error( "phenotype must be set\n")
+    }
+  }
+  else {
+    
+    map <- h$map
 
-  if ( is.null(phenotype) )
-    phenotype = h$phenotype
+    if ( is.null(markers) ) 
+      markers <- h$markers[1:length(h$markers)-1]
+
+    if ( is.null(phenotype) )
+      phenotype = h$phenotype
+  }
   
   if ( model == 'partial' || model == 'full' ) {
     lp <- matrix( ncol=8, nrow=length(map)-1)
@@ -1636,7 +1656,7 @@ gfit <- function( h, eps=1.0e-4, shuffle=FALSE, method="optim" ) {
 # Genome Cache functions
 
 save.genome <- function ( gdir, sdir, prefix, chrs=NULL,
-                         file.format="ped", mapfile=NULL, ancestryfile=NULL, generations=50, phase="unknown", haploid=FALSE ) {
+                         file.format="ped", mapfile=NULL, ancestryfile=NULL, generations=50, phase="unknown", haploid=FALSE, mc.cores=1 ) {
 
   
   if ( is.null(chrs) ) 
@@ -1653,16 +1673,29 @@ save.genome <- function ( gdir, sdir, prefix, chrs=NULL,
   genotype <- paste(sdir, "/genotype/", sep="")
   dir.create(genotype)
 
-  for ( chr in chrs ) {
-    h <- happy( paste( gdir, chr, prefix, ".data", sep="" ),
-               paste( gdir, chr, prefix, ".alleles", sep="" ),
-               file.format=file.format,
-               ancestryfile=ancestryfile,
-               generations=generations, do.dp=TRUE, mapfile=mapfile, phase=phase, haploid=haploid )
+  if ( mc.cores <=1 ) {
+    lapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype) 
+  }
+  else	{
+     mclapply( chrs, save.happy.internal, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype, mc.cores=mc.cores) 
+  }
+}
+
+save.happy.internal <- function( chr, gdir, prefix, file.format, ancestryfile, generations, mapfile, phase, haploid, additive, genotype) { 
+	h <- happy( paste( gdir, chr, prefix, ".data", sep="" ),
+        	       paste( gdir, chr, prefix, ".alleles", sep="" ),
+               	file.format=file.format,
+               	ancestryfile=ancestryfile,
+	        generations=generations, do.dp=TRUE, mapfile=mapfile, phase=phase, haploid=haploid )
     save.happy( h, chr, dir=additive, model="additive"  )
     if ( h$haploid == FALSE ) save.happy( h, chr, dir=full, model="full"  )
     save.happy( h, chr, dir=genotype, model="genotype"  )
-  }
+    delete.happy.cobject(h)
+}
+
+delete.happy.cobject <- function(h)
+{
+  cat("delete.happy() called\n")
 }
 
 
@@ -1684,91 +1717,106 @@ save.happy <- function( h, pkg, dir, model="additive" ) {
     nm <- length(h$markers)
   else
     nm <- length(h$markers) -1
-  
+#  markers.safe = as.character(h$markers[1:nm])
+  markers.safe = make.names(h$markers[1:nm])
+
+
   assign("markers", h$markers[1:nm], 2)
+  assign("markers.safe",markers.safe,2)
   assign("map", h$map[1:nm], 2 )
   assign("chromosome", h$chromosome[1:nm], 2 )
   assign("subjects", h$subjects, 2 );
   assign("strains", h$strains, 2 )
+  assign("haploid", h$haploid, 2)
   print ("saving strains")
   if ( !is.null(h$bp))
     assign("bp", h$bp[1:nm], 2);
   
   if ( model == "genotype" ) {
     for( m in 1:nm ) {
-      assign(h$markers[m], hgenotype( h, m, collapse=TRUE ), 2)
+      assign(markers.safe[m], hgenotype( h, m, collapse=FALSE ), 2)
     }
-    g.data.save(ddp, compress=TRUE)
+    g.data.save(ddp)
   }
   else {
     for( m in 1:nm ) {
-      assign(h$markers[m], hdesign( h, m, model=model ), 2)
+      assign(markers.safe[m], hdesign( h, m, model=model ), 2)
     }
-    g.data.save(ddp, compress=TRUE)
+    g.data.save(ddp)
   }
   return(ddp)
 }
+
 load.genome <- function (dir,
                          use.X = TRUE,
                          chr   = the.chromosomes(use.X=use.X),
+                         n.chr=NA,
                          models=c("additive", "full", "genotype"))  # CHANGED
 {
   g <- list()
-    old.subjects <- NULL
-    old.strains <- NULL
-    for (model in models) {
-        pkgs <- paste(dir, model, chr, sep = "/")   # CHANGED
-        markers <- c()
-        chromosome <- c()
-        map <- c()
-        pkgname <- c()
-        bp <- c()
-        for (p in pkgs) {
-            chromosome <- c(chromosome, g.data.get("chromosome",
-                p))
-            m <- g.data.get("markers", p)
-            markers <- c(markers, m)
-            map <- c(map, g.data.get("map", p))
-            bp <- c(bp, g.data.get("bp", p))
-            pkgname <- c(pkgname, rep(p, length(m)))
-            subjects <- g.data.get("subjects", p)
-            strains <- g.data.get("strains", p)
+  old.subjects <- NULL
+  old.strains <- NULL
+  if ( is.integer(n.chr) )
+    chr = paste("chr", 1:chr, sep="")
+  
+  for (model in models) {
+    if ( file.exists( paste(dir, model, sep = "/") )) {
+    pkgs <- paste(dir, model, chr, sep = "/")   # CHANGED
+    pkgs = pkgs[file.exists(pkgs)]
+    markers <- c()
+    chromosome <- c()
+    map <- c()
+    pkgname <- c()
+    bp <- c()
+    for (p in pkgs) {
+#      chromosome <- c(chromosome, g.data.get("chromosome", p))
+      chromosome <- c(chromosome, happy.load.data("chromosome", p))
+      m <- happy.load.data("markers", p)
+      markers <- c(markers, m)
+      map <- c(map, happy.load.data("map", p))
+      bp <- c(bp, happy.load.data("bp", p))
+      pkgname <- c(pkgname, rep(p, length(m)))
+      subjects <- happy.load.data("subjects", p)
+      strains <- happy.load.data("strains", p)
 
-            if ( is.null(old.subjects)) {
-              old.subjects <- subjects
-            }
-            if ( subjects != old.subjects ) {
-              cat( "ERROR - subject names are inconsistent for chromosome ", chromosome , "\n")
-              stop( "FATAL HAPPY ERROR")
-            }
+      if ( is.null(old.subjects)) {
+        old.subjects <- subjects
+      }
+      if ( !identical(subjects,old.subjects )) {
+        cat( "ERROR - subject names are inconsistent for chromosome ", chromosome[1] , "\n", subjects, "\n", old.subjects, "\n")
+        stop( "FATAL HAPPY ERROR")
+      }
 
-            if ( is.null(old.strains)) {
-              old.strains <- strains
-            }
-            if ( strains != old.strains ) {
-              cat( "ERROR - strain names are inconsistent for chromosome ", chromosome , "\n")
-              stop( "FATAL HAPPY ERROR")
-            }
-        }
-        genome <- data.frame(
-                marker     = I(as.character(markers)),
-                map        = as.numeric(map),
-                bp         = as.numeric(bp),
-                ddp        = I(as.character(pkgname)),
-                chromosome = I(as.character(chromosome)))
-        g[[model]] <- list(
-                genome     = genome,
-                subjects   = subjects,
-                strains    = strains,
-                markers    = as.character(genome$marker),
-                chromosome = as.character(genome$chromosome),
-                map        = genome$map)
+      if ( is.null(old.strains)) {
+        old.strains <- strains
+      }
+      if ( ! identical( strains, old.strains) ) {
+        cat( "ERROR - strain names are inconsistent for chromosome ", chromosome[1] , "\n", strains, "\n", old.strains, "\n")
+        stop( "FATAL HAPPY ERROR")
+      }
     }
-    g$subjects <- g$genotype$subjects
-    g$strains  <- g$additive$strains
-    g$markers  <- g$genotype$markers
-    class(g)   <- "happy.genome"
-    return(g)
+    genome <- data.frame(
+                         marker     = I(as.character(markers)),
+                         map        = as.numeric(map),
+                         bp         = as.numeric(bp),
+                         ddp        = I(as.character(pkgname)),
+                         chromosome = I(as.character(chromosome)))
+    g[[model]] <- list(
+                       genome     = genome,
+                       subjects   = subjects,
+                       strains    = strains,
+                       markers    = as.character(genome$marker),
+                       chromosome = as.character(genome$chromosome),
+                       map        = genome$map)
+  }
+  }
+  g$subjects <- g$genotype$subjects
+  g$strains  <- g$additive$strains
+  g$markers  <- g$genotype$markers
+  g$chromosome <- g$genotype$chromosome
+  g$map <- g$genotype$map
+  class(g)   <- "happy.genome"
+  return(g)
 } 
 
 
@@ -1781,6 +1829,7 @@ load.markers <- function( genome, markers, model="additive", include.models=FALS
 
   marker.list <- list()
   model.list <- list()
+
   for(i in 1:length(markers)) {
     
     genome.model <- genome[[model[i]]]
@@ -1792,9 +1841,12 @@ load.markers <- function( genome, markers, model="additive", include.models=FALS
   
     if ( length(rows) > 0 ) {
       r <- rows[1]
+      
       m <- as.character(genome.model$genome[r,"marker"])
+#      m.names = make.names(m)
+      
       pkg <- as.character(genome.model$genome[r,"ddp"])
-      marker.list[[m]] <- g.data.get( m, pkg)
+      marker.list[[m]] <- happy.load.data( m, pkg) ###
       model.list[[m]] <- model[i]
   
     }
@@ -1804,4 +1856,31 @@ load.markers <- function( genome, markers, model="additive", include.models=FALS
   else
     return( marker.list )
 }
+
+happy.load.data <- function (item, dir) # replaces calls to g.data.get, to make things backwards compatible.
+{
+    env <- new.env()
+
+    # determine which version of g.data was used to save the data
+    filename.pre2009  <- file.path(dir, "data", paste(item, "RData", sep = "."))
+    if (file.exists(filename.pre2009))
+    {
+        load(filename.pre2009, env)
+        return ( get(item, envir = env) )
+    }
+    
+    # assume 2009 version of g.data was used
+    filename.post2009 <- file.path(dir,
+            paste(gsub("([[:upper:]])", "@\\1", item), "RData", sep = ".")
+            )
+    if (file.exists(filename.post2009))
+    {       
+        load(filename.post2009, env)
+        return ( get(item, envir = env ) )
+    }
+    stop("Could not find data for ", item, " in package ", dir)
+}
+
+
+
 
