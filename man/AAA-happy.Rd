@@ -207,7 +207,7 @@ HAPPY's analyis is essentially two stage; ancestral haplotype reconstruction usi
 }
 
 
-}
+
 
 \references{ Mott R, Talbot CJ, Turri MG, Collins AC, Flint J. 	
 	A method for fine mapping quantitative trait loci in outbred animal stocks.
@@ -225,7 +225,7 @@ happy.save( h, file )
 \arguments{
   \item{datafile}{ name of the text file containing the genotype and
     phenotype data in HAPPY format}
-  \item{allelesfile} { name of the text file containing the
+  \item{allelesfile}{ name of the text file containing the
     allele/strain data in HAPPY format}
   \item{generations}{ the number of breeding generations in the HS}
   \item{standardise}{ if TRUE then the phenotype is transformed to have
