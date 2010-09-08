@@ -63,8 +63,9 @@ int Rstrcmp( const void *A, const void *B) {
   int n;
   while ( la && lb )
     {
-      if (n = ( ((int)a[la--]) - ((int)b[lb--]) ) )
+      if (n = ( ((int)a[la--]) - ((int)b[lb--]) ) ) {
 	return n;
+      }
     }
   return la-lb;
 }
