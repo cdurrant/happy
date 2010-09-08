@@ -24,7 +24,7 @@ double rank_lin_regression( double *x, double *y, int from, int to, double *inte
 double lin_regression( double *x, double *y, int from, int to, double *intercept, double *slope, double *sigma, double *t_slope, double *stderr_slope, double *stderr_intercept ) {
 
   double s_x, s_y, ss_x, ss_y, ss_xy;
-  int i, k, n;
+  int k;
   double N=to-from+1, R;
   
   s_x = s_y = ss_x = ss_y = ss_xy = 0.0;
@@ -59,7 +59,7 @@ double *replace_by_ranks( double *array, int start, int stop ) {
   int len = stop-start+1;
   double *rank = (double*)calloc( len, sizeof(double) );
   double **ptr = (double**)calloc( len, sizeof(double*) );
-  int n, m;
+  int n;
 
   for(n=0;n<len;n++) {
     rank[n] = array[n+start];
@@ -84,7 +84,6 @@ double durbin_watson_test( double *x, double *y, int from, int to, double slope,
   double *diff;
   double sigma=0, dsigma=0, z;
   double dw;
-  double p, q;
   int n;
 
   diff = (double*)calloc(len,sizeof(double));
