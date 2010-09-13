@@ -1,1 +1,17 @@
-This is the README file for the happy repository on github
+Happy is an R package to help with the identification of genetic loci that
+are associated with a disease. It is designed to be applied to genotyping
+data of one generation, that are all derived from a limited number (~
+8) parents. Those conditions are found in lab grown animals, for which
+the individuals are either inbred, to be then shared in the community,
+or larger experiments may decide to outbread individuals from a small
+founder generataion.
+
+To help the aims of the EU COST "SYSGENET", happy is now made available
+as a github project. This will also help the development of happy, which
+today is dispersed among its current and past contributors. All of them
+will have github repositories themselves. For the moment speaking, you
+are asked to take a tree of your liking as the core functionality is
+shared among them all. Further instructions on from where to download
+will be published in due time on
+
+ http://www.well.ox.ac.uk/happy/happyR.shtml
