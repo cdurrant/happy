@@ -1,13 +1,12 @@
                                         # create plots of the result returned by hfit, mfit
 
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s',
+happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, t='s',
 			vlines.lty=3, # to link labels with graph use dotted lines
 			vlines.col="lightgray", # and those lines should not distract from the main graph too much
 			pch=20,
 			 ... ) {
 
   def.par <- par(no.readonly=TRUE)
-  plot.new()
 
   model <- fit$model
   lp <- na.omit(fit$table)
@@ -74,13 +73,10 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 
   }
 
-  
+					# preparing window and its dimensions to plot in
+
   colours <- c( "black", "red", "blue", "green", "orange")
   cnames = colnames(lp );
-  par(col="black")
-  par(lwd=2)
-  plot( x=lp[,1], y=lp[,offset],  ylim=mx,main=main,xlab=xlab,ylab=ylab, t=t, pch=pch, ...)
-
   rx = range( as.numeric( lp[,1] ) )
   lx <- rx[2]-rx[1]
   tx <- c( rx[1] + 0.02*(lx) )
@@ -89,6 +85,18 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   text( tx, ty, cnames[offset], adj=c(0))
   wd <- strwidth(cnames)
   buff <- strwidth("spa")
+
+  plot.new(...)
+  plot.window(xlim=rx,ylim=mx, ...)
+  title(main=main,sub=sub,xlab=xlab,ylab=ylab, ...)
+  axis(side=1)
+  axis(side=2)
+					# the main data
+  
+
+  par(col="black")
+  par(lwd=2)
+  lines( x=lp[,1], y=lp[,offset], type=t, pch=pch, ...)
 
   if ( rangemax > offset ) 
     for( i in (offset+1):rangemax ) {
@@ -100,11 +108,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
       par(ps=12)
     }
 
-
   par(col="black")
-
                                         # the labels
-  
   if ( ! is.null(labels) ) {
     par(srt=270)
     par(adj=0)
@@ -121,6 +126,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
 
   par(def.par)
+
+
   NULL
 }
 
