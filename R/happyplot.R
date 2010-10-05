@@ -1,6 +1,6 @@
                                         # create plots of the result returned by hfit, mfit
 
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, t='s',
+happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s',
 			vlines.lty=3, # to link labels with graph use dotted lines
 			vlines.col="lightgray", # and those lines should not distract from the main graph too much
 			pch=20,
