@@ -98,6 +98,16 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   axis(side=1)
   axis(side=2)
 
+
+						# the labels
+  if ( ! is.null(labels) ) {
+    y <- rep( mx[2]*0.99, length(labels$text) )
+    text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
+    for( m in labels$POSITION) {
+      lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col, lwd=vlines.lwd)
+    }
+  }
+
 						# the main data, not using 'plot' to avoid
 						# empty pages e.g. when printing to PDF
   lines( x=lp[,1], y=lp[,offset], type=type, pch=pch, col=lines.col, lwd=lines.lwd,...)
@@ -110,16 +120,6 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
       lines( x=lp[,1], y=lp[,i], type=type, pch=pch,ps=1,col=col)
     }
   }
-
-						# the labels
-  if ( ! is.null(labels) ) {
-    y <- rep( mx[2]*0.99, length(labels$text) )
-    text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
-    for( m in labels$POSITION) {
-      lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col, lwd=vlines.lwd)
-    }
-  }
-
   par(def.par)
 
 
