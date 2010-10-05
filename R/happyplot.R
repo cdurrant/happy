@@ -1,9 +1,22 @@
                                         # create plots of the result returned by hfit, mfit
 
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s', pch=20, ... ) {
+happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s',
+			vlines.lty=3,		# to link labels with graph use dotted lines
+			vlines.col="lightgray", # and those lines should not distract from the main graph too much
+			vlines.lwd=1,		# which is why they are rather thin by default
+			labels.col="black",	# colour for labels (from top downwards)
+			labels.srt=270,		# degree of rotation for labels
+			labels.adj=0,		# adjustment for lables (left-justified)
+			labels.ps=8,		# point size of label text
+			lines.lwd=2,		# width of lines of main plot
+			lines.col="black",	# colour in which draw the main plot
+			pch=20,
+			 ... ) {
+
+  plot.new(...)					# initialisation of graphics, calling it
+						# early to allow use of strwidth
 
   def.par <- par(no.readonly=TRUE)
-  plot.new()
 
   model <- fit$model
   lp <- na.omit(fit$table)
@@ -30,10 +43,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
     offset <- offset + plots 
   }
 
-                                        # the y-axis range
-  
+						# the y-axis range
   mx <- 0
-  
   rangemax <- offset + plots-1 
   for( i in offset:rangemax ) {
     r <- range( as.numeric(lp[,i]))
@@ -41,9 +52,17 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
   ymax <- mx[2]
   
-                                        # work out how much vertical space to allocate to the marker labels, if present
-  
+						# work out how much vertical space to allocate
+						# to the marker labels, if present
   if ( ! is.null( labels ) ) {
+
+    if ( is.logical( labels ) & T==labels) {	# allow decent labels with a mere setting to TRUE
+      labels<-list(
+	text=fit$table[,"marker"],
+	POSITION=as.numeric(fit$table[,"cM"])
+      )
+    }
+
     ps <- par('ps')
     par(ps=8)
     lwidth <- strwidth( as.character(labels$text), units='inches' );
@@ -57,57 +76,46 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 
     h <- H/lambda
     mx[2] <- mx[2] + h
-    
-
   }
 
-  
+						# preparing window and its dimensions to plot in
   colours <- c( "black", "red", "blue", "green", "orange")
   cnames = colnames(lp );
-  par(col="black")
-  par(lwd=2)
-  plot( x=lp[,1], y=lp[,offset],  ylim=mx,main=main,xlab=xlab,ylab=ylab, t=t, pch=pch, ...)
-
   rx = range( as.numeric( lp[,1] ) )
   lx <- rx[2]-rx[1]
-  tx <- c( rx[1] + 0.02*(lx) )
+  plot.window(xlim=rx,ylim=mx, ...)
 
-  ty <- c( 0.95*mx[2] ) 
-  text( tx, ty, cnames[offset], adj=c(0))
-  wd <- strwidth(cnames)
-  buff <- strwidth("spa")
+  title(main=main,sub=sub,xlab=xlab,ylab=ylab, ...)
+  axis(side=1)
+  axis(side=2)
 
-  if ( rangemax > offset ) 
-    for( i in (offset+1):rangemax ) {
-      par(col=colours[i-offset+1])
-      tx <- c( tx[1] + wd[i-1] + buff[1]) 
-      text( tx, ty, cnames[i], adj=c(0))
-      par(ps=1)
-      lines( x=lp[,1], y=lp[,i], t=t, pch=pch)
-      par(ps=12)
-    }
-
-
-  par(col="black")
-
-                                        # the labels
-  
-  if ( ! is.null(labels) ) {
-    par(srt=270)
-    par(adj=0)
-    par(ps=8)
+						# the labels and connecting lines
+						# print early to have them covered by later text
+  if ( ! is.null(labels) ) {			
     y <- rep( mx[2]*0.99, length(labels$text) )
-    text( labels$POSITION, y, as.character(labels$text) )
-    par(lwd=1)
-    par(col='black')
-    x <- labels$POSITION
-    for( m in x) {
-      lines( x=c( m,m ), y=c(0,ymax) )
+    text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
+    for( m in labels$POSITION) {
+      lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col, lwd=vlines.lwd)
     }
-    par(srt=0)
   }
 
+						# the main data, not using 'plot' to avoid
+						# empty pages e.g. when printing to PDF
+  if ( rangemax >= offset ) {
+    tx <- rx[1] + 0.02*(lx)
+    ty <- c( 0.95*mx[2] ) 
+    wd <- strwidth(cnames)
+    buff <- strwidth("spa")
+    for( i in offset:rangemax ) {
+      col=colours[i-offset+1]
+      text( tx, 0, cnames[i], adj=c(0),ps=12,col=col)
+      tx <- tx + wd[i] + buff[1] 
+      lines( x=lp[,1], y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
+    }
+  }
   par(def.par)
+
+
   NULL
 }
 
