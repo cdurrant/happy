@@ -1,6 +1,10 @@
                                         # create plots of the result returned by hfit, mfit
 
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s', pch=20, ... ) {
+happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s',
+			vlines.lty=3, # to link labels with graph use dotted lines
+			vlines.col="lightgray", # and those lines should not distract from the main graph too much
+			pch=20,
+			 ... ) {
 
   def.par <- par(no.readonly=TRUE)
   plot.new()
@@ -44,6 +48,15 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
                                         # work out how much vertical space to allocate to the marker labels, if present
   
   if ( ! is.null( labels ) ) {
+
+					# allow decent labels with a mere setting to TRUE
+    if ( is.logical( labels ) & T==labels) {
+      labels<-list(
+	text=fit$table[,"marker"],
+	POSITION=as.numeric(fit$table[,"cM"])
+      )
+    }
+
     ps <- par('ps')
     par(ps=8)
     lwidth <- strwidth( as.character(labels$text), units='inches' );
@@ -102,7 +115,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
     par(col='black')
     x <- labels$POSITION
     for( m in x) {
-      lines( x=c( m,m ), y=c(0,ymax) )
+      lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col)
     }
     par(srt=0)
   }
