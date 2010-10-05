@@ -44,9 +44,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
 
 						# the y-axis range
-  
   mx <- 0
-  
   rangemax <- offset + plots-1 
   for( i in offset:rangemax ) {
     r <- range( as.numeric(lp[,i]))
@@ -81,26 +79,19 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
 
 						# preparing window and its dimensions to plot in
-
   colours <- c( "black", "red", "blue", "green", "orange")
   cnames = colnames(lp );
   rx = range( as.numeric( lp[,1] ) )
   lx <- rx[2]-rx[1]
-  tx <- c( rx[1] + 0.02*(lx) )
   plot.window(xlim=rx,ylim=mx, ...)
-
-  ty <- c( 0.95*mx[2] ) 
-  text( tx, ty, cnames[offset], adj=c(0))
-  wd <- strwidth(cnames)
-  buff <- strwidth("spa")
 
   title(main=main,sub=sub,xlab=xlab,ylab=ylab, ...)
   axis(side=1)
   axis(side=2)
 
-
-						# the labels
-  if ( ! is.null(labels) ) {
+						# the labels and connecting lines
+						# print early to have them covered by later text
+  if ( ! is.null(labels) ) {			
     y <- rep( mx[2]*0.99, length(labels$text) )
     text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
     for( m in labels$POSITION) {
@@ -110,14 +101,16 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 
 						# the main data, not using 'plot' to avoid
 						# empty pages e.g. when printing to PDF
-  lines( x=lp[,1], y=lp[,offset], type=type, pch=pch, col=lines.col, lwd=lines.lwd,...)
-
-  if ( rangemax > offset ) {
-    for( i in (offset+1):rangemax ) {
+  if ( rangemax >= offset ) {
+    tx <- rx[1] + 0.02*(lx)
+    ty <- c( 0.95*mx[2] ) 
+    wd <- strwidth(cnames)
+    buff <- strwidth("spa")
+    for( i in offset:rangemax ) {
       col=colours[i-offset+1]
-      tx <- c( tx[1] + wd[i-1] + buff[1]) 
-      text( tx, ty, cnames[i], adj=c(0),ps=12,col=col)
-      lines( x=lp[,1], y=lp[,i], type=type, pch=pch,ps=1,col=col)
+      text( tx, 0, cnames[i], adj=c(0),ps=12,col=col)
+      tx <- tx + wd[i] + buff[1] 
+      lines( x=lp[,1], y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
     }
   }
   par(def.par)
