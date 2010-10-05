@@ -44,12 +44,11 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
   ymax <- mx[2]
   
-                                        # work out how much vertical space to allocate to the marker labels, if present
-  
+						# work out how much vertical space to allocate
+						# to the marker labels, if present
   if ( ! is.null( labels ) ) {
 
-					# allow decent labels with a mere setting to TRUE
-    if ( is.logical( labels ) & T==labels) {
+    if ( is.logical( labels ) & T==labels) {	# allow decent labels with a mere setting to TRUE
       labels<-list(
 	text=fit$table[,"marker"],
 	POSITION=as.numeric(fit$table[,"cM"])
@@ -69,11 +68,9 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 
     h <- H/lambda
     mx[2] <- mx[2] + h
-    
-
   }
 
-					# preparing window and its dimensions to plot in
+						# preparing window and its dimensions to plot in
 
   colours <- c( "black", "red", "blue", "green", "orange")
   cnames = colnames(lp );
@@ -91,9 +88,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   title(main=main,sub=sub,xlab=xlab,ylab=ylab, ...)
   axis(side=1)
   axis(side=2)
-					# the main data
-  
-
+						# the main data
   par(col="black")
   par(lwd=2)
   lines( x=lp[,1], y=lp[,offset], type=t, pch=pch, ...)
@@ -109,7 +104,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
     }
 
   par(col="black")
-                                        # the labels
+						# the labels
   if ( ! is.null(labels) ) {
     par(srt=270)
     par(adj=0)
