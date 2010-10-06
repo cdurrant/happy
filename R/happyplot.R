@@ -9,7 +9,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 			labels.adj=0,		# adjustment for lables (left-justified)
 			labels.ps=8,		# point size of label text
 			lines.lwd=2,		# width of lines of main plot
-			lines.col="black",	# colour in which draw the main plot
+			lines.col=c( "black", "red", "blue", "green", "orange"),
+						# colours in which draw the main plots
 			pch=20,
 			 ... ) {
 
@@ -79,7 +80,12 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
   }
 
 						# preparing window and its dimensions to plot in
-  colours <- c( "black", "red", "blue", "green", "orange")
+  
+  if (is.null(lines.col)) {
+     warning("The system needs a series of colours in which to draw the probability lines. The 'lines.col' argument should thus not be set to 'NULL'.\n")
+     lines.col <- c( "black", "red", "blue", "green", "orange")
+  }
+
   cnames = colnames(lp );
   rx = range( as.numeric( lp[,1] ) )
   lx <- rx[2]-rx[1]
@@ -103,18 +109,17 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 						# empty pages e.g. when printing to PDF
   if ( rangemax >= offset ) {
     tx <- rx[1] + 0.02*(lx)
-    ty <- c( 0.95*mx[2] ) 
+    #ty <- c( 0.95*mx[2] ) # to be removed
     wd <- strwidth(cnames)
     buff <- strwidth("spa")
     for( i in offset:rangemax ) {
-      col=colours[i-offset+1]
+      col=lines.col[i-offset+1]
       text( tx, 0, cnames[i], adj=c(0),ps=12,col=col)
       tx <- tx + wd[i] + buff[1] 
       lines( x=lp[,1], y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
     }
   }
   par(def.par)
-
 
   NULL
 }
