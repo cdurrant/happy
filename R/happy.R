@@ -88,8 +88,9 @@ happy.save <- function( h, file ) {
 
                                         # C interface to return the design matrix for a marker interval
                                         # h is a happy object returned by a previous call to happy
-                                        # marker is the name of the left-hand marker in the interval, or the integer index of the marker (starting from 1)
-                                        # mode can be 'additive' or 'full'
+                                        # marker is the name of the left-hand marker in the interval, or
+					#    the integer index of the marker (starting from 1)
+                                        # model can be 'additive' or 'full'
                                         # if mergematrix is non-null then the columns of the design matrix are merged 
 
 hdesign <- function( h, marker, model='additive', mergematrix=NULL ) {
