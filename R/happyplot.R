@@ -12,7 +12,30 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 			lines.col=c( "black", "red", "blue", "green", "orange"),
 						# colours in which draw the main plots
 			pch=20,
+			chrs=NULL,		# chromosomes to print
 			 ... ) {
+
+  chromosome<-NULL				# single chromosome to work with in this plot
+  if (is.null(chrs)) {
+	# no chromosomes specifies, print them all
+	chromosome<-unique(fit$chromosome)
+  }
+
+  if (!is.null(chromosome)) {
+	  if (length(chromosome)>1) {
+		# we can only deal with a single chromosome per plot, call the function
+		# recursively
+		for (chr in chromosome) {
+			happyplot(fit,mode,labels,xlab,ylab,main,sub,type,
+			          vlines.lty,vlines.col,vlines.lwd,
+				  labels.col,labels.srt,labels.adj,labels.ps,
+				  lines.lwd,lines.col,pch,
+				  chrs=chr,...)
+		}
+		return(NULL)
+	  }
+  }
+
 
   plot.new(...)					# initialisation of graphics, calling it
 						# early to allow use of strwidth
