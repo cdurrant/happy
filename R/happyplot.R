@@ -1,6 +1,8 @@
                                         # create plots of the result returned by hfit, mfit
 
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s',
+happyplot <- function ( fit, mode='logP', labels=NULL,
+			xlab=ifelse(missing(chrs),'cM',paste('cM on chromosome',chrs)),
+			ylab=NULL, main=NULL, sub=NULL, type='s',
 			vlines.lty=3,		# to link labels with graph use dotted lines
 			vlines.col="lightgray", # and those lines should not distract from the main graph too much
 			vlines.lwd=1,		# which is why they are rather thin by default
@@ -13,12 +15,19 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 						# colours in which draw the main plots
 			pch=20,
 			chrs=NULL,		# chromosomes to print
+			verbose=FALSE,		# status messages
 			 ... ) {
+
+  cat("modified version.\n")
 
   chromosome<-NULL				# single chromosome to work with in this plot
   if (is.null(chrs)) {
 	# no chromosomes specifies, print them all
+	cat("Not chromosome to sprint specified, preparing to print them all.\n")
 	chromosome<-unique(fit$chromosome)
+  } else {
+	chromosome<-chrs
+	cat("Chromosome: "); print(chromosome)
   }
 
   if (!is.null(chromosome)) {
@@ -29,21 +38,32 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 			happyplot(fit,mode,labels,xlab,ylab,main,sub,type,
 			          vlines.lty,vlines.col,vlines.lwd,
 				  labels.col,labels.srt,labels.adj,labels.ps,
-				  lines.lwd,lines.col,pch,
-				  chrs=chr,...)
+				  lines.lwd,lines.col,pch, chrs=chr, verbose=verbose, ...)
 		}
+		rm(chr)
 		return(NULL)
 	  }
+  }
+
+  selected.markers<-T				# take all markers by default
+  if (!is.null(chromosome)) {
+	selected.markers<-which(fit$chromosome==chromosome)
+	if (0==length(selected.markers)) {
+		warning(paste("No data available for chromosome ",chromosome,".\n",sep=""))
+		return(NULL)
+	}
+	selected.markers<-selected.markers[1:(length(selected.markers)-1)]
+	cat("Plotting fit for chromosome ",chromosome,", selected positions ",
+		paste(range(selected.markers),sep="-"),".")
   }
 
 
   plot.new(...)					# initialisation of graphics, calling it
 						# early to allow use of strwidth
-
   def.par <- par(no.readonly=TRUE)
 
   model <- fit$model
-  lp <- na.omit(fit$table)
+  lp <- na.omit(fit$table[selected.markers,])
   test <- fit$test
   offset <- fit$offset
   plots <- fit$width
@@ -53,7 +73,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
     mode <- 'permutation'
     main <- 'permutation plot'
     ylab <- 'permutation logp'
-    lp <- na.omit(fit$permdata$permutation.pval)
+    lp <- na.omit(fit$permdata$permutation.pval[selected.markers,])
   }
   else if ( mode == 'logP' ) {
     ylab <- mode
@@ -82,8 +102,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, mai
 
     if ( is.logical( labels ) & T==labels) {	# allow decent labels with a mere setting to TRUE
       labels<-list(
-	text=fit$table[,"marker"],
-	POSITION=as.numeric(fit$table[,"cM"])
+	text=fit$table[selected.markers,"marker"],
+	POSITION=as.numeric(fit$table[selected.markers,"cM"])
       )
     }
 
