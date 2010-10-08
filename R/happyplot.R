@@ -15,8 +15,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 						# colours in which draw the main plots
 			pch=20,
 			chrs=NULL,		# chromosomes to print
-			verbose=FALSE,		# status messages
-			 ... ) {
+			... ) {
 
   cat("modified version.\n")
 
@@ -38,7 +37,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 			happyplot(fit,mode,labels,xlab,ylab,main,sub,type,
 			          vlines.lty,vlines.col,vlines.lwd,
 				  labels.col,labels.srt,labels.adj,labels.ps,
-				  lines.lwd,lines.col,pch, chrs=chr, verbose=verbose, ...)
+				  lines.lwd,lines.col,pch, chrs=chr,  ...)
 		}
 		rm(chr)
 		return(NULL)
