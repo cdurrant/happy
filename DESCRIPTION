@@ -16,4 +16,3 @@ Description: happy is an R interface into the HAPPY C package
  range of models to be fit to the data.
 License: GPL version 2 or newer
 URL: http://www.r-project.org, http://www.well.ox.ac.uk/happy
-Packaged: 2010-05-21 14:48:12 UTC; rmott
