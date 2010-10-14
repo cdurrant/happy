@@ -3,7 +3,8 @@
 library(MASS)
 library(g.data)
 	
-                                        # C interface to read in .data and .alleles files, perform DP and create a happy object
+                                        # C interface to read in .data and .alleles files, perform DP
+					# and create a happy object
                                         #
                                         # a happy object is a list with the following attributes:
                                         # happy$strains array of strain names
@@ -11,7 +12,8 @@ library(g.data)
                                         # happy$subjects array of subject names
                                         # happy$phenotype array of phenotype values
                                         # happy$map array of map locations (in cM) pf markers
-                                        # happy$handle integer handle which maps the R happy object to the corresponding C QTL object
+                                        # happy$handle integer handle which maps the R happy object
+					# to the corresponding C QTL object
 
 
 happy<- function( datafile, allelesfile, generations=200,
