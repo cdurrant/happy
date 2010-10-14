@@ -6,7 +6,8 @@
 \usage{ 
 happyplot( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s', pch=20, 
            vlines.lty=3, vlines.col="lightgray", vlines.lwd=1, labels.col="black", labels.srt=270,
-	   labels.adj=0, labels.ps=8, lines.lwd=2, lines.col=c( "black", "red", "blue", "green", "orange"), ... ) 
+	   labels.adj=0, labels.ps=8, lines.lwd=2, lines.col=c( "black", "red", "blue", "green", "orange"),
+	   chrs=NULL, ... ) 
 mergeplot( fit, mergedata, mode='logP', xlab='bp', ylab=NULL, main=NULL,  t='p', pch=20, ... ) 
 }
 \arguments{ 
@@ -30,6 +31,7 @@ The following options are passed to the plotting routines:
 \item{labels.ps}  { point size of label text }
 \item{lines.lwd}  { width of lines of main plot }
 \item{lines.col}  { colours in which draw the main plots, which should be an array of colours when multiple plots are expected for a single diagram }
+\item{chrs}       { chromosomes to print diagrams for. The default is to print them all. }
 \item{...}{ arguments passed down to R plotting functions}
 }
 \value{ A plot to the current graphics device is produced. For
