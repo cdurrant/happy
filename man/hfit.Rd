@@ -110,6 +110,7 @@ normalise(values)
     \item{permdata}{ a list containing the results of the permutation
       analysis, or NULL if permute=0. The list contains the following
       elements:
+	\itemize{
       \item{N}{ The number of permutations }
       \item{permutation.dist}{ A vector containing sorted ANOVA logP values from the N
 	permutations. These values can be used to estimate the shape of
@@ -127,6 +128,7 @@ normalise(values)
 	permutation logP at the marker interval that exceed the logP for
 	that interval.
       }
+	}
       }
 
 	 
