@@ -17,7 +17,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 						# colours in which draw the main plots
 			pch=20,
 			chrs=NULL,		# chromosomes to print
-			together=F,		# show multiple chromosomes on single plot
+			together=TRUE,		# show multiple chromosomes on single plot
 			vlines.chr.lty=vlines.lty, # line width of vertical line identifying chromosome
 			vlines.chr.lwd=vlines.lwd, # type of vertical line identifying chromosome
 			vlines.chr.col=vlines.col, # colour of vertical line identifying chromosome
@@ -50,7 +50,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 	  }
   }
 
-  selected.markers<-T				# take all markers by default
+  selected.markers<-TRUE			# take all markers by default
   run.length=list(lengths=nrow(fit$table),values="any",cumsum=nrow(fit$table))
 
   if (!is.null(chromosome)) {
@@ -115,7 +115,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 						# to the marker labels, if present
   if ( ! is.null( labels ) ) {
 
-    if ( is.logical( labels ) & T==labels) {	# allow decent labels with a mere setting to TRUE
+    if ( is.logical( labels ) & TRUE==labels) {	# allow decent labels with a mere setting to TRUE
       labels<-list(
 	text=fit$table[selected.markers,"marker"],
 	POSITION=as.numeric(fit$table[selected.markers,"cM"])
