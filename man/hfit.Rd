@@ -28,7 +28,7 @@
 }
 \usage{
 hfit( h, markers=NULL, model='additive', mergematrix=NULL,
-covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0 )
+covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0, chromosome=NULL )
 
 hfit.sequential( h, threshold=2,  markers=NULL, model='additive',
 mergematrix=NULL, covariatematrix=NULL, verbose=FALSE, family='gaussian')
@@ -84,6 +84,8 @@ normalise(values)
     (hfit() only ). }
   \item{values}{a numeric vector of phenotype values to transform into
     normal deviates (normalise() only) }
+  \item{chromosome}{assignment of markers to individual chromosomes, by
+    default falling back to chromosome attribute of happy object passed to hfit}
 }
 
 
