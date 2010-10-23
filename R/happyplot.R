@@ -1,7 +1,9 @@
                                         # create plots of the result returned by hfit, mfit
 
 happyplot <- function ( fit, mode='logP', labels=NULL,
-			xlab=ifelse(missing(chrs),'cM',paste('cM on chromosome',chrs)),
+			xlab=ifelse(together,
+				ifelse(missing(chrs),'Marker position',paste('Marker positions from chromosome',paste(chrs,collapse=","))),
+				ifelse(missing(chrs),'cM',paste('cM on chromosome',paste(chrs,collapse=",")))),
 			ylab=NULL, main=NULL, sub=NULL, type='s',
 			vlines.lty=3,		# to link labels with graph use dotted lines
 			vlines.col="lightgray", # and those lines should not distract from the main graph too much
@@ -15,14 +17,18 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 						# colours in which draw the main plots
 			pch=20,
 			chrs=NULL,		# chromosomes to print
+			together=F,		# show multiple chromosomes on single plot
+			vlines.chr.lty=vlines.lty, # line width of vertical line identifying chromosome
+			vlines.chr.lwd=vlines.lwd, # type of vertical line identifying chromosome
+			vlines.chr.col=vlines.col, # colour of vertical line identifying chromosome
 			... ) {
 
-  cat("modified version.\n")
+  #cat("modified version.\n")
 
   chromosome<-NULL				# single chromosome to work with in this plot
   if (is.null(chrs)) {
 	# no chromosomes specifies, print them all
-	cat("Not chromosome to sprint specified, preparing to print them all.\n")
+	cat("Not chromosome to plot specified, preparing to print them all.\n")
 	chromosome<-unique(fit$chromosome)
   } else {
 	chromosome<-chrs
@@ -30,7 +36,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   }
 
   if (!is.null(chromosome)) {
-	  if (length(chromosome)>1) {
+	  if (!together && length(chromosome)>1) {
 		# we can only deal with a single chromosome per plot, call the function
 		# recursively
 		for (chr in chromosome) {
@@ -45,15 +51,25 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   }
 
   selected.markers<-T				# take all markers by default
+  run.length=list(lengths=nrow(fit$table),values="any",cumsum=nrow(fit$table))
+
   if (!is.null(chromosome)) {
-	selected.markers<-which(fit$chromosome==chromosome)
+	run.lengths<-rle(fit$chromosome)
+	run.length$cumsum<-cumsum(run.lengths$lengths)
+
+	selected.markers <- (fit$chromosome %in% chromosome)
 	if (0==length(selected.markers)) {
 		warning(paste("No data available for chromosome ",chromosome,".\n",sep=""))
 		return(NULL)
 	}
-	selected.markers<-selected.markers[1:(length(selected.markers)-1)]
-	cat("Plotting fit for chromosome ",chromosome,", selected positions ",
-		paste(range(selected.markers),sep="-"),".")
+	selected.markers[run.length$cumsum]<-FALSE # may not be the brightest thing on earth to do
+
+	if (length(chromosome)==1) {
+		cat("Plotting fit for chromosome ",chromosome,", selected positions ",
+			paste(range(selected.markers),sep="-"),".'\n")
+	} else {
+		cat("Plotting fit for chromosomes ",paste(chromosome,collapse=",",sep=""),"\n",sep="")
+	}
   }
 
 
@@ -129,37 +145,85 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   }
 
   cnames = colnames(lp );
-  rx = range( as.numeric( lp[,1] ) )
-  lx <- rx[2]-rx[1]
-  plot.window(xlim=rx,ylim=mx, ...)
+  if (together) {
+	  plot.window(xlim=c(1,nrow(lp)),ylim=mx, ...)
+  }
+  else {
+	  rx = range( as.numeric( lp[,1] ) )
+	  lx <- rx[2]-rx[1]
+	  plot.window(xlim=rx,ylim=mx, ...)
+  }
 
   title(main=main,sub=sub,xlab=xlab,ylab=ylab, ...)
   axis(side=1)
   axis(side=2)
+						#
+						# PLOTTING
+						#
+
+  if (together) {				#       Variant 1: all selected chrs in one graph
+
+	if (!is.null(fit$chromosome)) {
+						# plotting separator of chromosomes
+		run.lengths.selected<-rle(fit$chromosome[selected.markers])
+		run.lengths.selected$cumsum<-cumsum(run.lengths.selected$lengths)
+
+		data.chromosome <- rbind(
+			start=c(1,1+run.lengths.selected$cumsum[1:(length(run.lengths.selected$cumsum)-1)]),
+			end=run.lengths.selected$cumsum-1
+		)
+		colnames(data.chromosome)<-run.lengths.selected$values
+
+		cat("These are the number of markers-pairs for every selected chromosome:\n")
+		print(run.lengths.selected)
+		cat("and here as a matrix the bits of interest for every chromosome:\n")
+		print(data.chromosome)
+
+		for(p in 1:ncol(data.chromosome)) {
+			from<-data.chromosome["start",p]
+			to<-data.chromosome["end",p]
+			chr<-colnames(data.chromosome)[p]
+			lines( x=c(to+1,to+1), y=c(0,ymax) , lty=vlines.chr.lty, col=vlines.chr.col, lwd=vlines.chr.lwd)
+			text(x=floor(mean(data.chromosome[,p])),y=ymax/22,labels=paste("Chr",chr),col=vlines.chr.col)
+						# plotting fragments of data per chromosomes to avoind 'wrong' links between chrs
+			for( i in offset:rangemax ) {
+				col=lines.col[i-offset+1]
+				lines(x=from:to,y=lp[from:to,i], type=type, pch=pch, col=col, lwd=lines.lwd)
+			}
+		}
+
+	} else {
+						# the main data printed all together disregarding all centiMorgan positions
+		for( i in offset:rangemax ) {
+			col=lines.col[i-offset+1]
+			lines(x=1:nrow(lp),y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
+		}
+	}
+
+  } else {					#       Variant 2: one graph per chromosome
 
 						# the labels and connecting lines
 						# print early to have them covered by later text
-  if ( ! is.null(labels) ) {			
-    y <- rep( mx[2]*0.99, length(labels$text) )
-    text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
-    for( m in labels$POSITION) {
-      lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col, lwd=vlines.lwd)
-    }
-  }
-
-						# the main data, not using 'plot' to avoid
-						# empty pages e.g. when printing to PDF
-  if ( rangemax >= offset ) {
-    tx <- rx[1] + 0.02*(lx)
-    #ty <- c( 0.95*mx[2] ) # to be removed
-    wd <- strwidth(cnames)
-    buff <- strwidth("spa")
-    for( i in offset:rangemax ) {
-      col=lines.col[i-offset+1]
-      text( tx, 0, cnames[i], adj=c(0),ps=12,col=col)
-      tx <- tx + wd[i] + buff[1] 
-      lines( x=lp[,1], y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
-    }
+	if ( ! is.null(labels) ) {			
+	  	y <- rep( mx[2]*0.99, length(labels$text) )
+	  	text( labels$POSITION, y, as.character(labels$text), col=labels.col, srt=labels.srt, ps=labels.ps, adj=0 )
+	  	for( m in labels$POSITION) {
+			lines( x=c( m,m ), y=c(0,ymax) , lty=vlines.lty, col=vlines.col, lwd=vlines.lwd)
+	  	}
+	}
+						# the main data
+	if ( rangemax >= offset ) {
+	  	tx <- rx[1] + 0.02*(lx)
+	  	#ty <- c( 0.95*mx[2] ) # to be removed
+	  	wd <- strwidth(cnames)
+	  	buff <- strwidth("spa")
+	  	for( i in offset:rangemax ) {
+		      col=lines.col[i-offset+1]
+		      text( tx, 0, cnames[i], adj=c(0),ps=12,col=col)
+		      tx <- tx + wd[i] + buff[1] 
+		      lines( x=lp[,1], y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
+	  	}
+	}
   }
   par(def.par)
 
