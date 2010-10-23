@@ -7,7 +7,8 @@
 happyplot( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s', pch=20, 
            vlines.lty=3, vlines.col="lightgray", vlines.lwd=1, labels.col="black", labels.srt=270,
 	   labels.adj=0, labels.ps=8, lines.lwd=2, lines.col=c( "black", "red", "blue", "green", "orange"),
-	   chrs=NULL, ... ) 
+	   chrs=NULL, together=TRUE, vlines.chr.lty=vlines.lty, vlines.chr.lwd=3*vlines.lwd, vlines.chr.col=vlines.col,
+           ... ) 
 mergeplot( fit, mergedata, mode='logP', xlab='bp', ylab=NULL, main=NULL,  t='p', pch=20, ... ) 
 }
 \arguments{ 
@@ -32,6 +33,10 @@ The following options are passed to the plotting routines:
 \item{lines.lwd}{ width of lines of main plot }
 \item{lines.col}{ colours in which draw the main plots, which should be an array of colours when multiple plots are expected for a single diagram }
 \item{chrs}{ chromosomes to print diagrams for. The default is to print them all. }
+\item{together}{switch between presentation of all chromosomes in one diagram together and the individual plotting for every chromosome. The joint presentation will not show the markers at their Morgan positions but sequentially show them in equal distance.}
+\item{vlines.chr.lty}{type of vertical line identifying chromosome, defaulting to those of lable-anchors}
+\item{vlines.chr.lwd}{width of vertical line identifying chromosome, defaulting to 3times of those of lable-anchors}
+\item{vlines.chr.col}{colour of vertical line identifying chromosome, defaulting to that of lable-anchors}
 \item{...}{ arguments passed down to R plotting functions}
 }
 \value{ A plot to the current graphics device is produced. For
