@@ -22,16 +22,16 @@ The following options are passed to the plotting routines:
 \item{t}{ the type of plot - either 'p', 'l', 's' or 'S', with the same meanings as in plot() }
 \item{pch}{ the plotting character code, with the same meaning as in
   plot() }
-\item{vlines.lty} { type of line to link labels with X axis, set to 0 for blank line, the default draws dotted lines }
-\item{vlines.col} { color of line linking labels with X axis, set to light grey by default }
-\item{vlines.lwd} { width of line that is linking labels with the X axis }
-\item{labels.col} { colour for labels }
-\item{labels.srt} { degree of rotation for label, default orients them from top downwardss }
-\item{labels.adj} { adjustment for lables (left-justified) }
-\item{labels.ps}  { point size of label text }
-\item{lines.lwd}  { width of lines of main plot }
-\item{lines.col}  { colours in which draw the main plots, which should be an array of colours when multiple plots are expected for a single diagram }
-\item{chrs}       { chromosomes to print diagrams for. The default is to print them all. }
+\item{vlines.lty}{ type of line to link labels with X axis, set to 0 for blank line, the default draws dotted lines }
+\item{vlines.col}{ color of line linking labels with X axis, set to light grey by default }
+\item{vlines.lwd}{ width of line that is linking labels with the X axis }
+\item{labels.col}{ colour for labels }
+\item{labels.srt}{ degree of rotation for label, default orients them from top downwardss }
+\item{labels.adj}{ adjustment for lables (left-justified) }
+\item{labels.ps}{ point size of label text }
+\item{lines.lwd}{ width of lines of main plot }
+\item{lines.col}{ colours in which draw the main plots, which should be an array of colours when multiple plots are expected for a single diagram }
+\item{chrs}{ chromosomes to print diagrams for. The default is to print them all. }
 \item{...}{ arguments passed down to R plotting functions}
 }
 \value{ A plot to the current graphics device is produced. For
