@@ -2,9 +2,13 @@
 \alias{happyplot}
 \alias{mergeplot}
 \title{Plotting functions for happy model fits}
-\description{ happyplot() will plot along the genome the log P-value that a QTL is not found in a series of marker intervals. It accepts as input the results of hfit(), mfit() and mergefit(). mergeplot() is a convenience function for calling happlyplot() after a call to mergefit(), with several parameters set.}
+\description{ happyplot() will plot along the genome the log P-value that a QTL is not found in a series of marker intervals. It accepts as input the results of hfit(), mfit() and mergefit(). mergeplot() is a convenience function for calling happlyplot() after a call to mergefit(), with several parameters set. }
 \usage{ 
-happyplot( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s', pch=20, ... ) 
+happyplot( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, sub=NULL, type='s', pch=20, 
+           vlines.lty=3, vlines.col="lightgray", vlines.lwd=1, labels.col="black", labels.srt=270,
+	   labels.adj=0, labels.ps=8, lines.lwd=2, lines.col=c( "black", "red", "blue", "green", "orange"),
+	   chrs=NULL, together=TRUE, vlines.chr.lty=vlines.lty, vlines.chr.lwd=3*vlines.lwd, vlines.chr.col=vlines.col,
+           ... ) 
 mergeplot( fit, mergedata, mode='logP', xlab='bp', ylab=NULL, main=NULL,  t='p', pch=20, ... ) 
 }
 \arguments{ 
@@ -19,17 +23,31 @@ The following options are passed to the plotting routines:
 \item{t}{ the type of plot - either 'p', 'l', 's' or 'S', with the same meanings as in plot() }
 \item{pch}{ the plotting character code, with the same meaning as in
   plot() }
+\item{vlines.lty}{ type of line to link labels with X axis, set to 0 for blank line, the default draws dotted lines }
+\item{vlines.col}{ color of line linking labels with X axis, set to light grey by default }
+\item{vlines.lwd}{ width of line that is linking labels with the X axis }
+\item{labels.col}{ colour for labels }
+\item{labels.srt}{ degree of rotation for label, default orients them from top downwardss }
+\item{labels.adj}{ adjustment for lables (left-justified) }
+\item{labels.ps}{ point size of label text }
+\item{lines.lwd}{ width of lines of main plot }
+\item{lines.col}{ colours in which draw the main plots, which should be an array of colours when multiple plots are expected for a single diagram }
+\item{chrs}{ chromosomes to print diagrams for. The default is to print them all. }
+\item{together}{switch between presentation of all chromosomes in one diagram together and the individual plotting for every chromosome. The joint presentation will not show the markers at their Morgan positions but sequentially show them in equal distance.}
+\item{vlines.chr.lty}{type of vertical line identifying chromosome, defaulting to those of lable-anchors}
+\item{vlines.chr.lwd}{width of vertical line identifying chromosome, defaulting to 3times of those of lable-anchors}
+\item{vlines.chr.col}{colour of vertical line identifying chromosome, defaulting to that of lable-anchors}
 \item{...}{ arguments passed down to R plotting functions}
 }
 \value{ A plot to the current graphics device is produced. For
   happyplot, if fit$permdata is not NULL (i.e. hfit() was run using the
   permutation test option) then the plot contains two step functions, labelled
-  global.logp and point.logp The global.logp plot shows the empirical
-  log-pvalue relative the whole region (ie adjusted for the number of
+  global.logp and point.logp.  The global.logp plot shows the empirical
+  log-pvalue relative the whole region (i.e. adjusted for the number of
   markers) while point.logp shows the empirical log-pvalue for each
   interval. If fit$permdata is NULL then the plots give the ANOVA logP
   values. If the model used in  hfit() is 'additive' then the logP for
-  the additive mocdel vs the null model is plotted; if the model is
+  the additive model vs the null model is plotted; if the model is
   'full' then the curves for the full, additive and partial F-test logP
   values are plotted.  }
 \examples{
@@ -38,7 +56,6 @@ The following options are passed to the plotting routines:
 \dontrun{ happyplot( fit ) }
 }
 
-
-\seealso{ hfit(), mfit(), mergefit() }
+\seealso{ hfit(), mfit(), mergefit(), par() }
 \keyword{aplot}
 \author{Richard Mott}
