@@ -19,7 +19,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 			chrs=NULL,		# chromosomes to print
 			together=TRUE,		# show multiple chromosomes on single plot
 			vlines.chr.lty=vlines.lty, # line width of vertical line identifying chromosome
-			vlines.chr.lwd=vlines.lwd, # type of vertical line identifying chromosome
+			vlines.chr.lwd=3*vlines.lwd, # type of vertical line identifying chromosome
 			vlines.chr.col=vlines.col, # colour of vertical line identifying chromosome
 			... ) {
 
