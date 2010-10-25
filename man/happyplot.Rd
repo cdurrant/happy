@@ -37,6 +37,9 @@ The following options are passed to the plotting routines:
 \item{vlines.chr.lty}{type of vertical line identifying chromosome, defaulting to those of lable-anchors}
 \item{vlines.chr.lwd}{width of vertical line identifying chromosome, defaulting to 3times of those of lable-anchors}
 \item{vlines.chr.col}{colour of vertical line identifying chromosome, defaulting to that of lable-anchors}
+\item{vlines.peak.lty}{type of vertical line identifying peak within chromosome, defaulting to those of lable-anchors}
+\item{vlines.peak.lwd}{width of vertical line identifying peak within chromosome, defaulting to 2times of those of lable-anchors}
+\item{vlines.peak.col}{colour of vertical line identifying peak within chromosome, defaulting to that of lable-anchors}
 \item{...}{ arguments passed down to R plotting functions}
 }
 \value{ A plot to the current graphics device is produced. For
