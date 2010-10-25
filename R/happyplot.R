@@ -21,6 +21,10 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 			vlines.chr.lty=vlines.lty, # line width of vertical line identifying chromosome
 			vlines.chr.lwd=3*vlines.lwd, # type of vertical line identifying chromosome
 			vlines.chr.col=vlines.col, # colour of vertical line identifying chromosome
+			vlines.peak.lty=vlines.lty, # line width of vertical line identifying chromosome
+			vlines.peak.lwd=2*vlines.lwd, # type of vertical line identifying chromosome
+			vlines.peak.col=vlines.col, # colour of vertical line identifying chromosome
+			verbose=TRUE,
 			... ) {
 
   #cat("modified version.\n")
@@ -28,12 +32,12 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   chromosome<-NULL				# single chromosome to work with in this plot
   if (is.null(chrs)) {
 	# no chromosomes specifies, print them all
-	cat("Not chromosome to plot specified, preparing to print them all.\n")
+	if (verbose) cat("Not chromosome to plot specified, preparing to print them all.\n")
 	chromosome<-unique(fit$chromosome)
   } else {
 	chromosome<-chrs
-	cat("Chromosome: "); print(chromosome)
   }
+  if (verbose) cat("Chromosome: "); print(chromosome)
 
   if (!is.null(chromosome)) {
 	  if (!together && length(chromosome)>1) {
@@ -51,24 +55,27 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   }
 
   selected.markers<-TRUE			# take all markers by default
-  run.length=list(lengths=nrow(fit$table),values="any",cumsum=nrow(fit$table))
+  run.lengths=list(lengths=nrow(fit$table),values="any",cumsum=nrow(fit$table))
 
   if (!is.null(chromosome)) {
 	run.lengths<-rle(fit$chromosome)
-	run.length$cumsum<-cumsum(run.lengths$lengths)
+	run.lengths$cumsum<-cumsum(run.lengths$lengths)
+	if (verbose){cat("run.lengths       :");print(run.lengths)}
+	if (verbose){cat("run.lengths$cumsum:");print(run.lengths$cumsum)}
+	
 
 	selected.markers <- (fit$chromosome %in% chromosome)
 	if (0==length(selected.markers)) {
 		warning(paste("No data available for chromosome ",chromosome,".\n",sep=""))
 		return(NULL)
 	}
-	selected.markers[run.length$cumsum]<-FALSE # may not be the brightest thing on earth to do
+	selected.markers[run.lengths$cumsum]<-FALSE # may not be the brightest thing on earth to do
 
 	if (length(chromosome)==1) {
-		cat("Plotting fit for chromosome ",chromosome,", selected positions ",
-			paste(range(selected.markers),sep="-"),".'\n")
+		if (verbose) cat("Plotting fit for chromosome ",chromosome,", selected positions ",
+			paste(range(which(selected.markers)),sep="-"),".'\n")
 	} else {
-		cat("Plotting fit for chromosomes ",paste(chromosome,collapse=",",sep=""),"\n",sep="")
+		if (verbose) cat("Plotting fit for chromosomes ",paste(chromosome,collapse=",",sep=""),"\n",sep="")
 	}
   }
 
@@ -144,7 +151,8 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
      lines.col <- c( "black", "red", "blue", "green", "orange")
   }
 
-  cnames = colnames(lp );
+  cnames = colnames(lp);
+  if(verbose) {cat("colnames: "); print(cnames)}
   if (together) {
 	  plot.window(xlim=c(1,nrow(lp)),ylim=mx, ...)
   }
@@ -167,11 +175,27 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 						# plotting separator of chromosomes
 		run.lengths.selected<-rle(fit$chromosome[selected.markers])
 		run.lengths.selected$cumsum<-cumsum(run.lengths.selected$lengths)
+		if (verbose) {
+			cat("run.lengths.selected: "); print(run.lengths.selected)
+			cat("run.lengths.selected$cumsum: "); print(run.lengths.selected$cumsum)
+		}
 
-		data.chromosome <- rbind(
-			start=c(1,1+run.lengths.selected$cumsum[1:(length(run.lengths.selected$cumsum)-1)]),
-			end=run.lengths.selected$cumsum-1
-		)
+		data.chromosome<-NULL
+		if (length(chromosome)==1) {
+			data.chromosome <- rbind(
+				start=1,
+				end=run.lengths.selected$cumsum-1
+			)
+		} else {
+			data.chromosome <- rbind(
+				start=c(1,1+run.lengths.selected$cumsum[1:(length(run.lengths.selected$cumsum)-1)]),
+				end=run.lengths.selected$cumsum-1
+			)
+		}
+		if (verbose) {
+			cat("data.chromosome: "); print(data.chromosome)
+			cat("-run.lengths.selected$values"); print(run.lengths.selected$values)
+		}
 		colnames(data.chromosome)<-run.lengths.selected$values
 
 		cat("These are the number of markers-pairs for every selected chromosome:\n")
@@ -187,8 +211,28 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 			text(x=floor(mean(data.chromosome[,p])),y=ymax/22,labels=paste("Chr",chr),col=vlines.chr.col)
 						# plotting fragments of data per chromosomes to avoind 'wrong' links between chrs
 			for( i in offset:rangemax ) {
+
 				col=lines.col[i-offset+1]
-				lines(x=from:to,y=lp[from:to,i], type=type, pch=pch, col=col, lwd=lines.lwd)
+
+				y.local <- lp[from:to,i]
+
+				if (!is.null(labels)) {
+						cat("Plotting lables for chromosomal peaks only.\n")
+					y.local.max<-max(y.local)
+					y.local.max.which<-from+which(y.local>=y.local.max)-1
+					cat("Peaks at: ") ; print(y.local.max.which)
+					peak.labels<-fit$table[selected.markers,"marker"][y.local.max.which]
+					cat("Peaks labels: ") ; print(peak.labels)
+					cat("Peaks height: ") ; print(y.local.max)
+					for(max.pos in 1:length(y.local.max)) {
+						m=y.local.max.which[max.pos]
+						cat("m=",m,", y.local.max=",y.local.max,"\n")
+						text(x=m,y=ymax,labels=peak.labels[max.pos],col=col,srt=labels.srt, ps=labels.ps, adj=0 )
+						lines(x=(0.5+c(m,m)), y=c(0,y.local.max) , lty=vlines.peak.lty, col=vlines.peak.col, lwd=vlines.peak.lwd)
+					}
+				}
+
+				lines(x=from:to,y=y.local, type=type, pch=pch, col=col, lwd=lines.lwd)
 			}
 		}
 
