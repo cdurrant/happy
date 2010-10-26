@@ -116,7 +116,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
     r <- range( as.numeric(lp[,i]))
     mx <- range(c( mx, r))
   }
-  ymax <- mx[2]
+  ymax <- mx[2]  # max of value, not excluding artificial extension for labels
   
 						# work out how much vertical space to allocate
 						# to the marker labels, if present
@@ -227,7 +227,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 					for(max.pos in 1:length(y.local.max)) {
 						m=y.local.max.which[max.pos]
 						cat("m=",m,", y.local.max=",y.local.max,"\n")
-						text(x=m,y=ymax,labels=peak.labels[max.pos],col=col,srt=labels.srt, ps=labels.ps, adj=0 )
+						text(x=m,y=mx[2],labels=peak.labels[max.pos],col=col,srt=labels.srt, ps=labels.ps, adj=0 )
 						lines(x=(0.5+c(m,m)), y=c(0,y.local.max) , lty=vlines.peak.lty, col=vlines.peak.col, lwd=vlines.peak.lwd)
 					}
 				}
