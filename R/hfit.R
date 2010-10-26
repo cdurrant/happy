@@ -18,8 +18,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
     if ( is.null(phenotype)) {
       error( "phenotype must be set\n")
     }
-  }
-  else {
+  } else {
     
     map <- h$map
 
@@ -39,8 +38,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
     offset <- 3
     width <- 3
     idx <- 3
-  }
-  else {
+  } else {
     lp <- matrix( ncol=4, nrow=length(map)-1)
     colnames(lp) <-c('cM', 'marker', 'additive logP', 'additive SS')
     offset <- 3
@@ -98,8 +96,9 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
     hf0$offset <- offset
     hf0$permdata <- permdata
     return(hf0);
-  }
-  else {
+
+  } else {
+
     i <- 1
     maxp <- 0
     maxm <- NA
@@ -114,8 +113,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
             cfit <- glmfit( phenotype ~ 1, family=family)
             ffit <- glmfit( phenotype ~ full , family=family)
             afit <- glmfit( phenotype ~ additive , family=family)
-          }
-          else {
+          } else {
             cfit <- glmfit( phenotype ~ covariatematrix , family=family)
             full <- cbind(covariatematrix, full )
             ffit <- glmfit( phenotype ~ full , family=family)
@@ -130,8 +128,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
           
             an2 <- anova( cfit, ffit );
             logP2 <- -log(an2[[6]])/log(10)
-          }
-          else {
+          } else {
             an <- anova( cfit, afit, ffit, test="Chisq" );
             if ( verbose ) print(an)
             logP <- -log(an[[5]])/log(10)
@@ -156,14 +153,14 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
           lp[i,8] <- an[[4]][3]
           i <- i+1
         }
-      }
-      else {
+
+      } else {
+
         if ( ! is.null(d<- hdesign( h, m, model='additive', mergematrix=mergematrix )) ) {
           if ( is.null(covariatematrix) ) {
             cfit <- glmfit( phenotype ~ 1 , family=family)
             afit <- glmfit( phenotype ~ d , family=family)
-          }
-          else {
+          } else {
             cfit <- glmfit( phenotype ~ covariatematrix )
             d <- cbind( covariatematrix, d )
             afit <- glmfit( phenotype ~ d )
@@ -172,8 +169,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
           if ( family=="gaussian") {
             an <- anova( cfit, afit )
             logP <- -log( an[[6]])/log(10)
-          }
-          else {
+          } else {
             an <- anova( cfit, afit, test="Chisq" )
 #            print(an)
             logP <- -log( an[[5]])/log(10)
