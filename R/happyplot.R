@@ -154,7 +154,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   cnames = colnames(lp);
   if(verbose) {cat("colnames: "); print(cnames)}
   if (together) {
-	  plot.window(xlim=c(1,nrow(lp)),ylim=mx, ...)
+	  plot.window(xlim=c(1,nrow(lp)),ylim=mx+c(-0.2,0), ...)
   }
   else {
 	  rx = range( as.numeric( lp[,1] ) )
@@ -239,9 +239,20 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 	} else {
 						# the main data printed all together disregarding all centiMorgan positions
 		for( i in offset:rangemax ) {
-			col=lines.col[i-offset+1]
 			lines(x=1:nrow(lp),y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
 		}
+	}
+						# now printing column names, loop separated to make sure they are readable
+	tx <- 1
+	wd <- strwidth(cnames)
+	buff <- strwidth("spa")
+	cat("cnames: "); print(cnames)
+
+	for( i in offset:rangemax ) {
+		col=lines.col[i-offset+1]
+		cat("cnames[i]: "); print(cnames[i])
+		text( x=tx, y=-0.2, labels=cnames[i], adj=c(0),ps=12,col=col)
+		tx <- tx + wd[i] + buff[1] 
 	}
 
   } else {					#       Variant 2: one graph per chromosome
