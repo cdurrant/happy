@@ -69,7 +69,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
     logpk <- logpk / permute
     p01 <- maxlogp[as.integer(permute/100)]
     p05 <- maxlogp[as.integer(permute/20)]
-    if ( verbose) cat( 'p01 ', p01, ' p05 ', p05 , "\n")
+    if ( verbose) cat( 'p01: ', p01, ', p05: ', p05 , "\n")
     mi <- 1
 
     for ( m in hf0$table[,"marker"]) {
