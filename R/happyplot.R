@@ -116,7 +116,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
     r <- range( as.numeric(lp[,i]))
     mx <- range(c( mx, r))
   }
-  ymax <- mx[2]
+  ymax <- mx[2]  # max of value, not excluding artificial extension for labels
   
 						# work out how much vertical space to allocate
 						# to the marker labels, if present
@@ -154,7 +154,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
   cnames = colnames(lp);
   if(verbose) {cat("colnames: "); print(cnames)}
   if (together) {
-	  plot.window(xlim=c(1,nrow(lp)),ylim=mx, ...)
+	  plot.window(xlim=c(1,nrow(lp)),ylim=mx+c(-0.2,0), ...)
   }
   else {
 	  rx = range( as.numeric( lp[,1] ) )
@@ -227,7 +227,7 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 					for(max.pos in 1:length(y.local.max)) {
 						m=y.local.max.which[max.pos]
 						cat("m=",m,", y.local.max=",y.local.max,"\n")
-						text(x=m,y=ymax,labels=peak.labels[max.pos],col=col,srt=labels.srt, ps=labels.ps, adj=0 )
+						text(x=m,y=mx[2],labels=peak.labels[max.pos],col=col,srt=labels.srt, ps=labels.ps, adj=0 )
 						lines(x=(0.5+c(m,m)), y=c(0,y.local.max) , lty=vlines.peak.lty, col=vlines.peak.col, lwd=vlines.peak.lwd)
 					}
 				}
@@ -239,9 +239,20 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 	} else {
 						# the main data printed all together disregarding all centiMorgan positions
 		for( i in offset:rangemax ) {
-			col=lines.col[i-offset+1]
 			lines(x=1:nrow(lp),y=lp[,i], type=type, pch=pch, col=col, lwd=lines.lwd)
 		}
+	}
+						# now printing column names, loop separated to make sure they are readable
+	tx <- 1
+	wd <- strwidth(cnames)
+	buff <- strwidth("spa")
+	cat("cnames: "); print(cnames)
+
+	for( i in offset:rangemax ) {
+		col=lines.col[i-offset+1]
+		cat("cnames[i]: "); print(cnames[i])
+		text( x=tx, y=-0.2, labels=cnames[i], adj=c(0),ps=12,col=col)
+		tx <- tx + wd[i] + buff[1] 
 	}
 
   } else {					#       Variant 2: one graph per chromosome
