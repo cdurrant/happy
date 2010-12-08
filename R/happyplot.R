@@ -203,11 +203,12 @@ happyplot <- function ( fit, mode='logP', labels=NULL,
 		cat("and here as a matrix the bits of interest for every chromosome:\n")
 		print(data.chromosome)
 
-		for(p in 1:ncol(data.chromosome)) {
+		p.max<-ncol(data.chromosome)
+		for(p in 1:p.max) {
 			from<-data.chromosome["start",p]
 			to<-data.chromosome["end",p]
 			chr<-colnames(data.chromosome)[p]
-			lines( x=c(to+1,to+1), y=c(0,ymax) , lty=vlines.chr.lty, col=vlines.chr.col, lwd=vlines.chr.lwd)
+			if (p<p.max) lines( x=c(to+1,to+1), y=c(0,ymax) , lty=vlines.chr.lty, col=vlines.chr.col, lwd=vlines.chr.lwd)
 			text(x=floor(mean(data.chromosome[,p])),y=ymax/22,labels=paste("Chr",chr),col=vlines.chr.col)
 						# plotting fragments of data per chromosomes to avoind 'wrong' links between chrs
 			for( i in offset:rangemax ) {
