@@ -311,7 +311,7 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   q->name = (char**)calloc(max_N,sizeof(char*));
   q->family = (char**)calloc(max_N,sizeof(char*));
   q->use_parents = use_parents;
-  q->missingCode = (char*)strdup(missingCode);
+  strncpy(q->missingCode,missingCode,MAX_LENGTH_MISSINGCODE);
 
   if ( use_parents || ped_format ) {
     q->sex = (int*)calloc(max_N, sizeof(int));
@@ -889,7 +889,7 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
 	    char *str = (char*)strtok( line, "	 " );
 	    af->allele_name[a] = (char*)strdup(allele_name);
 	    str = (char*)strtok( NULL, " 	" );
-	    if ( ! strcmp(allele_name, missingCode) )
+	    if ( ! strncmp(allele_name, missingCode, MAX_LENGTH_MISSINGCODE) )
 	      af->ND = a;
 	    /*	    Rprintf( "missing code for %d %d\n", m, af->ND);*/
 	    total = 0.0;

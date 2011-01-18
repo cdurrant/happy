@@ -13,6 +13,7 @@ typedef enum {UNKNOWN, MALE, FEMALE } GENDER;
 
 #define MAX_LENGTH_CHROMOSOME	70
 #define MAX_LENGTH_MARKER_NAME	20
+#define MAX_LENGTH_MISSINGCODE	3
 
 
 typedef struct {
@@ -99,7 +100,7 @@ typedef struct {
   int N;                       /* Number of individuals */
   int M;                       /* Number of markers */
   int S;                       /* Number of strains */
-  char *missingCode;           /* missing allele code */
+  char missingCode[MAX_LENGTH_MISSINGCODE+1]; /* missing allele code */
   int haploid;                  /* boolean indicating if data are haploid (== inbred)*/
   ALLELES *alleles;            /* pointer to ALLELES struct containing the founder strain info */
   ANCESTRY *an;               /* pointer to ANCESTRY struct containing the subject-specific ancestral strain probabilities (can be null)*/
