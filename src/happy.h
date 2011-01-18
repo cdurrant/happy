@@ -11,6 +11,9 @@ typedef enum {UNKNOWN, MALE, FEMALE } GENDER;
 
 #define ND_ALLELE "NA"
 
+#define MAX_LENGTH_CHROMOSOME	70
+#define MAX_LENGTH_MARKER_NAME	20
+
 
 typedef struct {
   int markers;
@@ -20,12 +23,12 @@ typedef struct {
 
 typedef struct {
   int alleles;
-  char *marker_name;
+  char marker_name[MAX_LENGTH_MARKER_NAME+1];
   char **allele_name;
   double *allele_freq; /* observed frequency of alleles */
   double **pr_AtoS; /* prob of strain s | allele a */
   double entropy;
-  char chromosome[20];         /* the chromosome of the marker */
+  char chromosome[MAX_LENGTH_CHROMOSOME+1];         /* the chromosome of the marker */
   double position;             /* estimate of the distance of the QTL from the left-hand end */
   double ProbSame;             /* prob of an observable recomb between this and the next marker */
   double **prior;              /* array of probabilities that the pair of QTL states are in */

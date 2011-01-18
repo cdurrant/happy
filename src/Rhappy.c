@@ -812,9 +812,11 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
   */
 
 
+  /* long temporay strings to avoid memory errors by scanf */
   char line[10000];
-  char marker_name[256];
-  char allele_name[256];
+  char marker_name[10000];
+  char allele_name[10000];
+  char chromosome_name[10000];
   int markers=-1;
   int strains=-1;
   int line_no = 0;
@@ -822,6 +824,11 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
   ALLELES *A=NULL;
 
   skip_comments( fp, line ); line_no++;
+  if (strlen(line)>1000) {
+   Rprintf( "Found length of line number %d to be too long (> 1000). Check line separator.\n", line_no);
+   error( "Found length of line to be too long (> 1000). Check line separator.\n");
+  }
+
   if ( sscanf( line, "markers %d strains %d", &markers, &strains ) == 2 ) {
     A = (ALLELES*)calloc(1,sizeof(ALLELES));
     A->markers = markers;
@@ -844,13 +851,25 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
 	}
       }
     }
+
     for(m=0;m<markers;m++) {
       ALLELE_FREQ *af = &(A->af[m]);
       double total = 0.0;
       skip_comments( fp, line ); line_no++;
-      strcpy(af->chromosome,"unknown");
-      if ( (sscanf( line, "marker %s %d %s %lf", marker_name, &(af->alleles), af->chromosome, &(af->position) ) == 4 ) ||  ( sscanf( line, "marker %s %d %lf", marker_name, &(af->alleles), &(af->position) ) == 3 )) {
-	af->marker_name = (char*)strdup( marker_name );
+
+      if ( sscanf( line, "marker %s %d %s %lf", marker_name, &(af->alleles), chromosome_name, &(af->position) ) == 4 ) {
+	strncpy(af->chromosome,chromosome_name,MAX_LENGTH_CHROMOSOME);
+      }
+      else if ( sscanf( line, "marker %s %d %lf", marker_name, &(af->alleles), &(af->position) ) == 3 ) {
+	strncpy(af->chromosome,"unknown",MAX_LENGTH_CHROMOSOME);
+      }
+      else {
+	Rprintf( "marker Parse ERROR, line %d %s\n", line_no, line );
+	error("fatal HAPPY error");
+      }
+
+      strncpy(af->marker_name,marker_name,MAX_LENGTH_MARKER_NAME);
+
 	if ( verbose>=2 ) 
 	  Rprintf("marker %d %s %.3f %d\n", m, af->marker_name, af->position, af->alleles);
 	af->pr_AtoS = (double**)calloc(af->alleles,sizeof(double*)); 
@@ -863,7 +882,10 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
 	af->ND = -1; /* index of code for missing value */
 	for(a=0;a<af->alleles;a++) {
 	  skip_comments( fp, line ); line_no++;
-	  if ( sscanf( line, "allele %s", allele_name ) == 1 ) {
+	  if ( sscanf( line, "allele %s", allele_name ) != 1 ) {
+	    Rprintf( "allele Parse ERROR, line %d %s\n", line_no, line );
+	    error("fatal HAPPY error");
+          }
 	    char *str = (char*)strtok( line, "	 " );
 	    af->allele_name[a] = (char*)strdup(allele_name);
 	    str = (char*)strtok( NULL, " 	" );
@@ -888,18 +910,8 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
 	    for(s=0;s<strains;s++) {
 	      af->pr_AtoS[a][s] /= total;
 	    }
-	  }
-	  else {
-	    Rprintf( "allele Parse ERROR, line %d %s\n", line_no, line );
-	    error("fatal HAPPY error");
-	  }
-	}
-      }
-      else {
-	Rprintf( "marker Parse ERROR, line %d %s\n", line_no, line );
-	error("fatal HAPPY error");
-      }
-    }
+	} // EoFor alleles
+    } // EoFor markers
 
     A->Pr_ss = (double*)calloc(markers,sizeof(double));
     A->Pr_st = (double*)calloc(markers,sizeof(double));
