@@ -302,7 +302,7 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   double NaN = nan("char-sequence");
 
   q->alleles = a;
-  q->filename = (char*)strdup(name);
+  strncpy(q->filename, name, MAX_LENGTH_FILENAME);
   q->N = 0;
   q->M = a->markers;
   q->S = a->strains;

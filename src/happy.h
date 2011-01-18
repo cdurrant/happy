@@ -14,6 +14,7 @@ typedef enum {UNKNOWN, MALE, FEMALE } GENDER;
 #define MAX_LENGTH_CHROMOSOME	70
 #define MAX_LENGTH_MARKER_NAME	20
 #define MAX_LENGTH_MISSINGCODE	3
+#define MAX_LENGTH_FILENAME	3
 
 
 typedef struct {
@@ -96,7 +97,7 @@ typedef struct {
 /* QTL_DATA  is a portmanteau struct that contains pretty much all the data */
 
 typedef struct {
-  char *filename;                  /* Name of the data-set */
+  char filename[MAX_LENGTH_FILENAME+1]; /* Name of the data-set */
   int N;                       /* Number of individuals */
   int M;                       /* Number of markers */
   int S;                       /* Number of strains */
