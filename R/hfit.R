@@ -69,7 +69,7 @@ hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariate
     logpk <- logpk / permute
     p01<-quantile(maxlogp,probs=(1-0.01))
     p05<-quantile(maxlogp,probs=(1-0.05))
-    if ( verbose) print(quantiles(maxlogp,0.01*c(0,50,75,90,95,99,99.5,1)))
+    if ( verbose ) print(quantile(maxlogp,0.01*c(0,50,75,90,95,99,99.5,1)))
     mi <- 1
 
     for ( m in hf0$table[,"marker"]) {
