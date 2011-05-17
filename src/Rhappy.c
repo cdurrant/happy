@@ -20,7 +20,7 @@ static int nqtldata = 0;
 int entrycmp( const void *a, const void *b );
 
 
-SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP file_format, SEXP missing_code, SEXP do_dp, SEXP min_dist, SEXP haploid, SEXP ancestryfile ) {
+SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP file_format, SEXP missing_code, SEXP do_dp, SEXP min_dist, SEXP haploid, SEXP ancestryfile, SEXP subset ) {
   QTL_DATA *q = NULL;
   ALLELES *a = NULL;
   FILE *dfp=NULL, *afp=NULL, *anfp=NULL;
@@ -41,6 +41,13 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   const char *File_FormatStr;
   int Do_dp, Haploid;
   double MinDist = 1.0e-5;
+
+  if (0 < length(subset)) {
+    if ( ! isNumeric(subset)) {
+       error( "happy: current implementation expects an index vector to define a subset of individuals.\n");
+    }
+    Rprintf( "Limiting analysis to %d individuals.\n", length(subset));
+  }
 
   if ( ! isString(datafile) || length(datafile) != 1 )
     error( "datafile is not a string");
@@ -100,6 +107,7 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   Rprintf( "mindist: %g\n", MinDist );
   Rprintf( "datafile %s allelesfile %s gen %d\n", dfilename, afilename, gen );
   Rprintf( "genotype phase: %s\n", PhaseStr);
+
 
   if ( ! strcmp( File_FormatStr, "ped") ) 
     ped_format = 1;

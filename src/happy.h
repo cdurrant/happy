@@ -173,7 +173,7 @@ int marker_index( const char *name, QTL_DATA *q, const int isIntervalModel );
 int genotype_difference( QTL_DATA *q, int i, int j );
 int pdump_prob_data( FILE *fp, int locus, QTL_DATA *q );
 double ** additive_design_matrix( QTL_DATA *q, int locus );
-SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP file_format, SEXP missing_code, SEXP do_dp, SEXP min_dist, SEXP haploid, SEXP anfilename );
+SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP file_format, SEXP missing_code, SEXP do_dp, SEXP min_dist, SEXP haploid, SEXP anfilename, SEXP subset );
 SEXP getListElement(SEXP list, char *str);
 QTL_DATA * validateParams ( SEXP handle, SEXP marker, int *locus, const int isIntervalModel);
 SEXP happyprobs ( SEXP handle, SEXP marker );
