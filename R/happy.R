@@ -23,7 +23,7 @@ happy <- function( datafile, allelesfile, generations=200, phase="unknown",
   gen <- as.numeric(generations)+0
   if ( phase=="estimate" ) file.format  <- "ped"
 
-  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp=as.integer(do.dp), min.dist=min.dist, haploid=as.integer(haploid), ancestryfile=ancestryfile, PACKAGE="happy.hbrem", subset=NULL )
+  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp=as.integer(do.dp), min.dist=min.dist, haploid=as.integer(haploid), ancestryfile=ancestryfile, subset=subset, PACKAGE="happy.hbrem" )
 
   h$phase <- phase
   h$haploid <- haploid
