@@ -42,13 +42,6 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   int Do_dp, Haploid;
   double MinDist = 1.0e-5;
 
-  if (0 < length(subset)) {
-    if ( ! isNumeric(subset)) {
-       error( "happy: current implementation expects an index vector to define a subset of individuals.\n");
-    }
-    Rprintf( "Limiting analysis to %d individuals.\n", Rf_length(subset));
-  }
-
   if ( ! isString(datafile) || length(datafile) != 1 )
     error( "datafile is not a string");
   dfilename = CHAR(STRING_ELT(datafile,0));
@@ -308,11 +301,20 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   char **mother = NULL;
   char **father= NULL;
   double NaN = nan("char-sequence");
+
+  Rprintf(" **** 1 *** read_qtl_data\n");
   int subset_length = Rf_length(subset);
-  int *subset_logical = NULL;
+  int* subset_logical = NULL;
+
+  Rprintf(" **** 2 *** read_qtl_data\n");
+
   if (0 < subset_length) {
     Rprintf("I: Preparing logical vector for subset.\n");
-    PROTECT( subset_logical = LOGICAL(subset) ) ;
+    if ( ! isLogical(subset)) {
+       error( "happy: current implementation expects a logical vector to define a subset of individuals.\n");
+    }
+    Rprintf( "Limiting analysis to %d individuals.\n", Rf_length(subset));
+    subset_logical = LOGICAL(subset) ;
   } else {
     Rprintf("I: Reading in whole file, not subsetting.\n");
   }
@@ -341,7 +343,12 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   int subsetpos=0;
   while ( skip_comments( fp, buffer ) != EOF ) {
     if (0 < subset_length) {
+      if (subsetpos >= subset_length) {
+        Rprintf("subsetpos = %d >= subset_length = %d\n",subsetpos, subset_length);
+        error("happy: read more entries than there are subset assignments.\n");
+      }
       if (subset_logical[subsetpos++] != TRUE) {
+	Rprintf("Skipping line %d:\n",subsetpos);
         char *freeme;
 	size_t s = getline(NULL,0,fp);
 	if (s>24) {
@@ -351,7 +358,8 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 		freeme[21]='.';
 	}
 	Rprintf("Ignoring line: %s\n",freeme);
-	free(freeme);
+	//producing memory leak - temporarily
+	//free(freeme);
         continue;
       }
     }
@@ -458,7 +466,6 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
     }
     q->N++;
   } // while iterating over individuals
-  UNPROTECT(1) ; // subset_logical
 
   if ( verbose>=2 ) {
     for(m=0;m<q->M;m++) {
