@@ -17,12 +17,13 @@ library(multicore)
 
 happy <- function( datafile, allelesfile, generations=200, phase="unknown",
                  file.format="happy", missing.code="NA", do.dp=TRUE,
-                 min.dist=1.0e-5, mapfile=NULL, ancestryfile=NULL, haploid=FALSE ) {
+                 min.dist=1.0e-5, mapfile=NULL, ancestryfile=NULL, haploid=FALSE,
+		 subset=NULL ) {
 
   gen <- as.numeric(generations)+0
   if ( phase=="estimate" ) file.format  <- "ped"
 
-  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp=as.integer(do.dp), min.dist=min.dist, haploid=as.integer(haploid), ancestryfile=ancestryfile, PACKAGE="happy.hbrem" )
+  h <- .Call( "happy", datafile, allelesfile, gen, phase, file.format, missing.code, do.dp=as.integer(do.dp), min.dist=min.dist, haploid=as.integer(haploid), ancestryfile=ancestryfile, PACKAGE="happy.hbrem", subset=NULL )
 
   h$phase <- phase
   h$haploid <- haploid
