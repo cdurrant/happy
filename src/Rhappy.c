@@ -46,7 +46,7 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
     if ( ! isNumeric(subset)) {
        error( "happy: current implementation expects an index vector to define a subset of individuals.\n");
     }
-    Rprintf( "Limiting analysis to %d individuals.\n", length(subset));
+    Rprintf( "Limiting analysis to %d individuals.\n", Rf_length(subset));
   }
 
   if ( ! isString(datafile) || length(datafile) != 1 )
@@ -129,7 +129,7 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
 
   a = input_allele_frequencies( afp, gen, MissingCode, MinDist, verbose );
   Rprintf( "a->markers %d\n", a->markers );
-  q = read_qtl_data( dfp, (char*)dfilename, a,  verbose, use_parents, ped_format, MissingCode );
+  q = read_qtl_data( dfp, (char*)dfilename, a,  verbose, use_parents, ped_format, MissingCode, subset);
   q->an = read_subject_ancestries( anfp, (char*)anfilename, verbose );
   q->phase_known = phaseKnown;
   q->haploid = Haploid;
@@ -299,7 +299,7 @@ QTL_FIT *allocate_qtl_fit( QTL_FIT *fit, int N, int strains ) {
 }
 
 
-QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use_parents, int ped_format, char *missingCode ) {
+QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use_parents, int ped_format, char *missingCode , SEXP subset) {
 
   QTL_DATA *q = (QTL_DATA*)calloc(1,sizeof(QTL_DATA));
   int max_N = 3000;
@@ -308,6 +308,14 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   char **mother = NULL;
   char **father= NULL;
   double NaN = nan("char-sequence");
+  int subset_length = Rf_length(subset);
+  int *subset_logical = NULL;
+  if (0 < subset_length) {
+    Rprintf("I: Preparing logical vector for subset.\n");
+    PROTECT( subset_logical = LOGICAL(subset) ) ;
+  } else {
+    Rprintf("I: Reading in whole file, not subsetting.\n");
+  }
 
   q->alleles = a;
   q->filename = (char*)strdup(name);
@@ -329,11 +337,29 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   }
   else
     Rprintf( "Reading phenotype and genotype data from data file %s\n", name );
+
+  int subsetpos=0;
   while ( skip_comments( fp, buffer ) != EOF ) {
+    if (0 < subset_length) {
+      if (subset_logical[subsetpos++] != TRUE) {
+        char *freeme;
+	size_t s = getline(NULL,0,fp);
+	if (s>24) {
+		freeme[24]=0;
+		freeme[23]='.';
+		freeme[22]='.';
+		freeme[21]='.';
+	}
+	Rprintf("Ignoring line: %s\n",freeme);
+	free(freeme);
+        continue;
+      }
+    }
     char *str1, *str2;
     m = 0;
     int ok = 0;
     if ( q->N >= max_N ) {
+      // extending memory
       max_N *= 2;
       q->observed = (double*)realloc(q->observed,max_N*sizeof(double));
       q->genos = (CHROM_PAIR*)realloc(q->genos,max_N*sizeof(CHROM_PAIR));
@@ -431,7 +457,8 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
       error("fatal HAPPY error");
     }
     q->N++;
-  }
+  } // while iterating over individuals
+  UNPROTECT(1) ; // subset_logical
 
   if ( verbose>=2 ) {
     for(m=0;m<q->M;m++) {

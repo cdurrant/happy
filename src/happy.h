@@ -152,7 +152,7 @@ double fit_linear_additive_model( QTL_DATA *qtl, QTL_FIT *fit, int shuffles, int
 QTL_FIT *allocate_qtl_fit( QTL_FIT *fit, int N, int strains );
 void print_qtl_data ( QTL_DATA *q, QTL_FIT *fit, FILE *fp );
 void qtl_fit_cp( QTL_FIT *fit1, QTL_FIT *fit2, int N, int S );
-QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a, int verbose, int use_parents, int ped_format, char *missing );
+QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a, int verbose, int use_parents, int ped_format, char *missing, SEXP subset );
 void write_qtl_data( FILE *fp, QTL_DATA *q );
 int check_and_apply_ancestry(QTL_DATA *q );
 double ***summed_dp_matrix( QTL_DATA *qtl, int individual,  double *p1, double *p2, int direction );
