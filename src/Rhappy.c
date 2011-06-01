@@ -342,26 +342,34 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   else
     Rprintf( "Reading phenotype and genotype data from data file %s\n", name );
 
-  int subsetpos=0;
+  char *myTmpString=(char *) NULL;
+  size_t maxRead = 50000;
+  int lineNo=0;
   while ( skip_comments( fp, buffer ) != EOF ) {
+    lineNo++;
     if (0 < subset_length) {
-      if (subsetpos >= subset_length) {
-        Rprintf("subsetpos = %d >= subset_length = %d\n",subsetpos, subset_length);
-        error("happy: read more entries than there are subset assignments.\n");
+      if (lineNo > subset_length) {
+        error("happy: read more entries than there are subset assignments: lineNo = %d > subset_length = %d\n",lineNo, subset_length);
       }
-      if (subset_logical[subsetpos++] != TRUE) {
-	Rprintf("Skipping line %d:\n",subsetpos);
-        char *freeme;
-	size_t s = getline(NULL,0,fp);
-	if (s>24) {
-		freeme[24]=0;
-		freeme[23]='.';
-		freeme[22]='.';
-		freeme[21]='.';
+      else if (subset_logical[lineNo-1] != TRUE) {
+	if ((char *) NULL == myTmpString) {
+		if ((char *) NULL == (myTmpString = malloc(sizeof(char)*(maxRead+1)))) {
+			error("Ran out of physical memory.\n");
+		}
 	}
-	Rprintf("Ignoring line: %s\n",freeme);
-	//producing memory leak - temporarily
-	//free(freeme);
+	Rprintf("Skipping line %d:\n",lineNo);
+	size_t s = getline(&myTmpString,&maxRead,fp);
+	if (-1 == s) {
+		Rprintf("\nhappy: At end of file at line %d.\n",lineNo);
+	} else {
+		if (s>24) {
+			myTmpString[24]=0;
+			myTmpString[23]='.';
+			myTmpString[22]='.';
+			myTmpString[21]='.';
+		}
+		Rprintf("Ignoring line: %s\n",myTmpString);
+	}
         continue;
       }
     }
@@ -468,6 +476,11 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
     }
     q->N++;
   } // while iterating over individuals
+
+  if ((char *)NULL != myTmpString) {
+	free(myTmpString);
+	myTmpString= (char *) NULL;
+  }
 
   if ( verbose>=2 ) {
     for(m=0;m<q->M;m++) {
@@ -2022,5 +2035,3 @@ int entrycmp( const void *a, const void *b ) {
 
   return strcmp( (const char*)A->key, (const char*)B->key );
 }
-
-    
