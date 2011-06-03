@@ -305,17 +305,15 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   int *pcount;
   int nparents=0;
 
-  Rprintf(" **** 1 *** read_qtl_data\n");
   int subset_length = Rf_length(subset);
   int* subset_logical = NULL;
 
-  Rprintf(" **** 2 *** read_qtl_data\n");
   if (0 < subset_length) {
     Rprintf("I: Preparing logical vector for subset.\n");
     if ( ! isLogical(subset)) {
        error( "happy: current implementation expects a logical vector to define a subset of individuals.\n");
     }
-    Rprintf( "Limiting analysis to %d individuals.\n", Rf_length(subset));
+    Rprintf( "I: Limiting analysis to %d individuals.\n", Rf_length(subset));
     subset_logical = LOGICAL(subset) ;
   } else {
     Rprintf("I: Reading in whole file, not subsetting.\n");
@@ -342,7 +340,6 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   else
     Rprintf( "Reading phenotype and genotype data from data file %s\n", name );
 
-  char *myTmpString=(char *) NULL;
   size_t maxRead = 50000;
   int lineNo=0;
   while ( skip_comments( fp, buffer ) != EOF ) {
@@ -352,25 +349,14 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
         error("happy: read more entries than there are subset assignments: lineNo = %d > subset_length = %d\n",lineNo, subset_length);
       }
       else if (subset_logical[lineNo-1] != TRUE) {
-	if ((char *) NULL == myTmpString) {
-		if ((char *) NULL == (myTmpString = malloc(sizeof(char)*(maxRead+1)))) {
-			error("Ran out of physical memory.\n");
-		}
-	}
-	Rprintf("Skipping line %d:\n",lineNo);
-	size_t s = getline(&myTmpString,&maxRead,fp);
-	if (-1 == s) {
-		Rprintf("\nhappy: At end of file at line %d.\n",lineNo);
-	} else {
-		if (s>24) {
-			myTmpString[24]=0;
-			myTmpString[23]='.';
-			myTmpString[22]='.';
-			myTmpString[21]='.';
-		}
-		Rprintf("Ignoring line: %s\n",myTmpString);
-	}
-        continue;
+           if (strlen(buffer)>24) {
+                buffer[24]=0;
+                buffer[23]='.';
+                buffer[22]='.';
+                buffer[21]='.';
+           }
+           Rprintf("  Ignoring: %s\n",buffer);
+           continue;
       }
     }
     char *str1, *str2;
@@ -476,11 +462,6 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
     }
     q->N++;
   } // while iterating over individuals
-
-  if ((char *)NULL != myTmpString) {
-	free(myTmpString);
-	myTmpString= (char *) NULL;
-  }
 
   if ( verbose>=2 ) {
     for(m=0;m<q->M;m++) {
