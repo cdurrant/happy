@@ -207,7 +207,7 @@ HAPPY's analyis is essentially two stage; ancestral haplotype reconstruction usi
 }
 
 
-}
+
 
 \references{ Mott R, Talbot CJ, Turri MG, Collins AC, Flint J. 	
 	A method for fine mapping quantitative trait loci in outbred animal stocks.
@@ -225,7 +225,7 @@ happy.save( h, file )
 \arguments{
   \item{datafile}{ name of the text file containing the genotype and
     phenotype data in HAPPY format}
-  \item{allelesfile} { name of the text file containing the
+  \item{allelesfile}{ name of the text file containing the
     allele/strain data in HAPPY format}
   \item{generations}{ the number of breeding generations in the HS}
   \item{standardise}{ if TRUE then the phenotype is transformed to have
@@ -306,11 +306,10 @@ happy.save( h, file )
     phenotypes}
   \item{handle}{a numeric index used internally by the C-code. Do not
     change.}
-  \item{matrices}{ a list of matrices used in model fitting (only
-    created after a call to happy.matrices())
+  \item{matrices}{ a list of matrices used in model fitting (only created after a call to happy.matrices()).}
   \item{use.pedigrees}{ boolean variable indicating whether pedigree information was used to help determine the phase of the genotypes}
   \item{phase.known}{ boolean variable indicating whether or not the phase of the genotypes is assumed to be known}
-}
+
 
   happy.save() will save a happy object to a file so that it can be
   re-used in a later session with the load() command.
@@ -328,8 +327,8 @@ happy.save( h, file )
   performed once, the data can be persisted to disk and then re-used (e.g. to analyse multiple
   phenotypes) at a later date.
 
-  }
-
+  
+}
 \seealso{ hfit(), mergefit(), happyplot() }
 \examples{
 \dontrun{h <- happy('HS.data', 'HS.alleles', generations=200)}

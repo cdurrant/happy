@@ -11,12 +11,13 @@
 #include<Rinternals.h>
 
 #include"happy.h"
-#include"cl.h"
+#include"readline.h"
 #include"cmp.h"
 #include"stats.h"
 
 static QTL_DATA *qtldata[100];
 static int nqtldata = 0;
+int entrycmp( const void *a, const void *b );
 
 
 SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP file_format, SEXP missing_code, SEXP do_dp, SEXP min_dist, SEXP haploid, SEXP ancestryfile ) {
@@ -64,7 +65,7 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   if ( ! isNumeric(generations) || length(generations) != 1 )
     error( "generations is not numeric");
   g = REAL(generations)[0];
-  gen = (int)g;
+  gen = (int)g; 
 
   if ( ! isString(phase) || length(phase) != 1 ) 
     error( "phase is not a string");
@@ -79,17 +80,17 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   if ( strlen( CHAR(STRING_ELT(missing_code,0)) ) > 0 ) {
     MissingCode = (char*)CHAR(STRING_ELT(missing_code,0));
   } else {
-    strcpy(MissingCode,ND_ALLELE);
+    MissingCode = strdup(ND_ALLELE);
   }
 
   if ( ! isNumeric(do_dp) || length(do_dp) != 1 )
     error( "do_dp is not numeric(1)");
-  Do_dp = (int)REAL(do_dp)[0];
+  Do_dp = INTEGER(do_dp)[0];
 
   if ( ! isNumeric(haploid) || length(haploid) != 1 )
     error( "haploid is not numeric(1)");
-  Haploid = (int)REAL(haploid)[0]; 
-  
+  Haploid = INTEGER(haploid)[0]; 
+
   if ( ! isNumeric(min_dist) || length(min_dist) != 1 )
     error( "min_dist is not numeric(1)");
   else if ( isNumeric(min_dist) )
@@ -116,7 +117,6 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
     phaseKnown = 1;
   }
 
-
   if ( use_parents ) Rprintf( "using parental genotypes to help determine phase\n");
 
   a = input_allele_frequencies( afp, gen, MissingCode, MinDist, verbose );
@@ -132,43 +132,39 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   Rprintf( "dfile %s afile %s gen %d\n", dfilename, afilename, gen );
 
   
-  if ( Do_dp )
+  if ( Do_dp ) {
     if ( q->haploid ) {
       /*      heterozygosity(q ); */
       create_haploid_summed_dp_matrices( q );
     }
     else
       create_summed_dp_matrices( q );
+  }
 
   PROTECT(strains=allocVector(STRSXP,q->S));
   for(i=0;i<q->S;i++) {
     SET_STRING_ELT(strains,i, mkChar(a->strain_name[i]));
   }
 
-
   PROTECT(markers=allocVector(STRSXP,q->M));
   for(i=0;i<q->M;i++) {
     SET_STRING_ELT(markers,i, mkChar(a->af[i].marker_name));
   }
-
 
   PROTECT(chromosome=allocVector(STRSXP,q->M));
   for(i=0;i<q->M;i++) {
     SET_STRING_ELT(chromosome,i, mkChar(a->af[i].chromosome));
   }
 
-
   PROTECT(map=allocVector(REALSXP,q->M));
   for(i=0;i<q->M;i++) {
     REAL(map)[i] = a->af[i].position;
   }
 
-
   PROTECT(subjects=allocVector(STRSXP,q->N));
   for(i=0;i<q->N;i++) {
     SET_STRING_ELT(subjects,i, mkChar(q->name[i]));
   }
-
 
   PROTECT(family=allocVector(STRSXP,q->N));
   for(i=0;i<q->N;i++) {
@@ -184,7 +180,6 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
     REAL(phenotypes)[i] = q->observed[i];
   }
 
-	  
   PROTECT( ans = allocVector( VECSXP, 8 ) );
   PROTECT(names=allocVector(STRSXP, 8 ) );
 
@@ -192,9 +187,8 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   qtldata[nqtldata] = q;
   INTEGER(handle)[0] = nqtldata++;
 
-
   
-  SET_VECTOR_ELT(ans,0,strains);
+  /*  SET_VECTOR_ELT(ans,0,strains);
   SET_VECTOR_ELT(names,0,mkChar("strains"));
   SET_VECTOR_ELT(ans,1,markers);
   SET_VECTOR_ELT(names,1,mkChar("markers"));
@@ -210,13 +204,27 @@ SEXP happy( SEXP datafile, SEXP allelesfile, SEXP generations, SEXP phase, SEXP 
   SET_VECTOR_ELT(names,6,mkChar("chromosome"));
   SET_VECTOR_ELT(ans,7,family);
   SET_VECTOR_ELT(names,7,mkChar("family"));
+  */
+  SET_VECTOR_ELT(ans,0,strains);
+  SET_STRING_ELT(names,0,mkChar("strains"));
+  SET_VECTOR_ELT(ans,1,markers);
+  SET_STRING_ELT(names,1,mkChar("markers"));
+  SET_VECTOR_ELT(ans,2,map);
+  SET_STRING_ELT(names,2,mkChar("map"));
+  SET_VECTOR_ELT(ans,3,subjects);
+  SET_STRING_ELT(names,3,mkChar("subjects"));
+  SET_VECTOR_ELT(ans,4,phenotypes);
+  SET_STRING_ELT(names,4,mkChar("phenotypes"));
+  SET_VECTOR_ELT(ans,5,handle);
+  SET_STRING_ELT(names,5,mkChar("handle"));
+  SET_VECTOR_ELT(ans,6,chromosome);
+  SET_STRING_ELT(names,6,mkChar("chromosome"));
+  SET_VECTOR_ELT(ans,7,family);
+  SET_STRING_ELT(names,7,mkChar("family"));
 
   setAttrib( ans, R_NamesSymbol, names );
 
-
-
   UNPROTECT(10);
-
 
   /* set the class */
 
@@ -286,14 +294,15 @@ QTL_FIT *allocate_qtl_fit( QTL_FIT *fit, int N, int strains ) {
 QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use_parents, int ped_format, char *missingCode ) {
 
   QTL_DATA *q = (QTL_DATA*)calloc(1,sizeof(QTL_DATA));
-  int max_N = 3000;
+  int max_N = 10000;
   int m;
-  char *buffer = (char*)calloc(100000,sizeof(char));
-  char **sbuf = (char**)calloc(2*a->markers,sizeof(char*));
+  int bufsize = 100+a->markers*20;
+  char *buffer = (char*)calloc(bufsize,sizeof(char));
   char **mother = NULL;
   char **father= NULL;
   double NaN = nan("char-sequence");
-
+  int *pcount;
+  int nparents=0;
   q->alleles = a;
   q->filename = (char*)strdup(name);
   q->N = 0;
@@ -316,7 +325,6 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
     Rprintf( "Reading phenotype and genotype data from data file %s\n", name );
   while ( skip_comments( fp, buffer ) != EOF ) {
     char *str1, *str2;
-    double x;
     m = 0;
     int ok = 0;
     if ( q->N >= max_N ) {
@@ -338,14 +346,13 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
     if ( use_parents || ped_format ) {
       char *family = strtok( buffer, " 	" );
       char *id = strtok( NULL, " 	" );
-      char *mum = strtok( NULL,  " 	" );
       char *dad = strtok( NULL,  " 	" );
+      char *mum = strtok( NULL,  " 	" );
       char *sex = strtok( NULL,  " 	" );
       char *pheno = strtok( NULL,  " 	" );
       
 
-      if ( family && id && mum && dad && sex && pheno ) {
-	char tmpstr[1000];
+      if ( family && id && dad && mum && sex && pheno ) {
 	char *endptr;
 	q->family[q->N] = (char*)strdup(family);
 	father[q->N] = (char*)strdup(dad);
@@ -458,18 +465,22 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
   Rprintf( "Number of individuals: %-5d\n", q->N );
   Rprintf( "Number of markers:     %-5d\n", q->M );
   Rprintf( "Number of strains:     %-5d\n", q->S );
+
   Rprintf( "Use Parents:           %s\n", q->use_parents ? "yes" : "no" );
 
+#ifdef _USE_HASH_
+
+  Rprintf( "status %d\n", use_parents || ped_format );
   if ( use_parents || ped_format ) {
-    int i;
-    ENTRY e;
-    ENTRY *f;
+    int i, nparents=0;
+    PARENT_KEY e;
+    PARENT_KEY *f;
     int both = 0;
 
     q->mother = (int*)calloc(q->N, sizeof(int));
     q->father = (int*)calloc(q->N, sizeof(int));
-
-
+    pcount = (int*)calloc(q->N, sizeof(int));
+    
     if ( hcreate(q->N) == 0 ) 
       error("Could not create hash table");
 
@@ -493,20 +504,86 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 	q->father[i] = (int)((long)(f->data));
       else 
 	q->father[i] = -1;
-      if ( q->mother[i] > -1 && q->father[i] > -1 )
+      if ( q->mother[i] > -1 && q->father[i] > -1 ) {
 	both++;
+	pcount[q->mother[i]]++;
+	pcount[q->father[i]]++;
+      }
     }
-       
+
+    for( i=0;i<q->N;i++)
+      nparents += pcount[i]>0
 
     hdestroy();
     free(mother);
     free(father);
+    free(pcount);
 
     Rprintf( "Number of subjects with two parents: %-5d\n", both );
+    Rprintf( "Number of parents in nuclear families: %-5d\n", nparents );
+
   }
+#else
+
+  if ( use_parents || ped_format ) {
+    int i;
+    int both = 0;
+    PARENT_KEY *sorted = (PARENT_KEY*)calloc(q->N, sizeof(PARENT_KEY));
+    PARENT_KEY *m, *f;
+
+    q->mother = (int*)calloc(q->N, sizeof(int));
+    q->father = (int*)calloc(q->N, sizeof(int));
+    pcount = (int*)calloc(q->N, sizeof(int));
+
+    for(i=0;i<q->N;i++) {
+      sorted[i].key = q->name[i];
+      sorted[i].id = i;
+    }
+
+    qsort( sorted, q->N, sizeof(PARENT_KEY), entrycmp );
+
+
+    for(i=0;i<q->N;i++) {
+      PARENT_KEY mum, dad;
+      mum.key = mother[i];
+      dad.key = father[i];
+      m = (PARENT_KEY*)bsearch( &mum, sorted, q->N, sizeof(PARENT_KEY), entrycmp );
+      f = (PARENT_KEY*)bsearch( &dad, sorted, q->N, sizeof(PARENT_KEY), entrycmp );
+      if ( m != NULL )
+	q->mother[i] = m->id;
+      else
+	q->mother[i] = -1;
+
+      if ( f != NULL )
+	q->father[i] = f->id;
+      else 
+	q->father[i] = -1;
+      if ( q->mother[i] > -1 && q->father[i] > -1 ) {
+	both++;
+	pcount[q->mother[i]]++;
+	pcount[q->father[i]]++;
+      }
+
+    }
+
+    for( i=0;i<q->N;i++)
+      nparents += pcount[i]>0;
+
+    free(mother);
+    free(father);
+    free(sorted);
+    free(pcount);
+
+    Rprintf( "Number of subjects with two parents: %-5d\n", both );
+    Rprintf( "Number of parents in nuclear families: %-5d\n", nparents );
+
+  }
+#endif
+
 
   fit_null_qtl_model( q );
 
+  free(buffer);
   return q;
 
 }
@@ -563,8 +640,9 @@ ANCESTRY *read_subject_ancestries( FILE *fp, char *filename, int verbose ) {
 	char *str=strtok(line,"	 ");
 	an->strain_name = (char**)calloc(strains,sizeof(char*));
 	for(k=0;k<strains;k++) {
-	  if ( str=strtok(NULL," 	") ) 
+	  if ( str=strtok(NULL," 	") ) {
 	    an->strain_name[k] = (char*)strdup(str);
+	  }
 	  else {
 	    Rprintf( "ERROR not enough strain names %d/%d\n", k, strains );
 	    error("fatal HAPPY error");
@@ -760,14 +838,11 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
 
   char line[10000];
   char marker_name[256];
-  char strain_name[256];
   char allele_name[256];
   int markers=-1;
   int strains=-1;
-  int alleles=-1;
   int line_no = 0;
   int m, s, a;
-  FILE *errorf = stderr;
   ALLELES *A=NULL;
 
   skip_comments( fp, line ); line_no++;
@@ -784,8 +859,9 @@ ALLELES *input_allele_frequencies( FILE *fp, int generations, char *missingCode,
       char *str=strtok(line,"	 ");
       A->strain_name = (char**)calloc(strains,sizeof(char*));
       for(k=0;k<strains;k++) {
-	if ( str=strtok(NULL," 	") ) 
+	if ( str=strtok(NULL," 	") ) {
 	  A->strain_name[k] = (char*)strdup(str);
+	}
 	else {
 	  Rprintf( "ERROR not enough strain names %d/%d\n", k, strains );
 	  error("fatal HAPPY error");
@@ -971,16 +1047,12 @@ QTL_PRIOR ***compute_qtl_priors(  QTL_DATA *qtl, QTL_PRIOR ***qp, int locus, dou
   /* compute, for each individual, the prior probabilities of the
      different strains at the flanking markers */
 
-  int i, j, left, right;
+  int i;
   int m = locus;
-  int strains = qtl->S;
   double total;
-  double Pr_ss = qtl->alleles->Pr_ss[locus];
-  double Pr_st = qtl->alleles->Pr_st[locus];
   double *LeftMargin = (double*)calloc(qtl->S,sizeof(double));
   double *RightMargin = (double*)calloc(qtl->S,sizeof(double));
   double s1 = 1.0/qtl->S;
-  double s12 = s1*s1;
 
   for(i=0;i<qtl->N;i++) {
     int s, t;
@@ -1076,8 +1148,8 @@ double ***summed_dp_matrix( QTL_DATA *qtl, int individual, double *Pr_ss, double
   int start, stop, incr;
   CHROM_PAIR *genotypes = &(qtl->genos[individual]);
   ALLELES *A = qtl->alleles;
-  int m, s, t, par;
-  int p1, p2, offset;
+  int m, s, t;
+  int offset;
   double total;
   int markers = genotypes->markers;
   int strains = A->strains;
@@ -1183,7 +1255,7 @@ double ***summed_dp_matrix( QTL_DATA *qtl, int individual, double *Pr_ss, double
     else
       a = A->af[m].pr_AtoS;
 
-    int m1, m2, p1, p2;
+    int m1=0, m2=0, p1=0, p2=0;
     if ( use_parents ) {
       m1 = mgenotypes->chrom1[m];
       m2 = mgenotypes->chrom2[m];
@@ -1302,7 +1374,7 @@ QTL_DATA* validateParams(
 {
 
     QTL_DATA *q = NULL;
-    int id;
+    int id=0;
 
     *locus = -1;
 
@@ -1424,19 +1496,21 @@ SEXP happyprobs ( SEXP handle, SEXP marker ) {
   return Matrix;
 }
 
-SEXP happyprobs2 ( SEXP handle, SEXP marker ) { 
-  /* returns a matrix giving for each row the probability that the corresponding individual is descened form a pair of strains. happyprobs2 differs from happyprobs only in the row of probabilities return is complete - ie due to symmentry it contains the off-diagonal elements twice */
+SEXP happyprobs2 ( SEXP handle, SEXP marker, SEXP symmetrize ) { 
+  /* returns a matrix giving for each row the probability that the corresponding individual is descened form a pair of strains. happyprobs2 differs from happyprobs only in the row of probabilities return is complete - ie due to symmetry it contains the off-diagonal elements twice. this is useful if the probabilities have been computed using parental information to estimate the phase of the haplotypes. */
  
 
   int locus = -1;
-  QTL_DATA *q = validateParams( handle, marker, &locus, 0 );
+  QTL_DATA *q = validateParams( handle, marker, &locus, 1 );
   SEXP Matrix = R_NilValue;
+  int Symmetrize;
+  if ( ! isNumeric(symmetrize) || length(symmetrize) != 1 )
+    error( "symmetrize is not numeric(1)");
+  Symmetrize = (int)REAL(symmetrize)[0]; 
 
   if ( locus >= 0 && q->dp_matrices != NULL) {
     ALLELE_FREQ *af = &(q->alleles->af[locus]);
     QTL_PRIOR ***p;
-    int S2 = q->S*q->S;
-
     int i;
 
   
@@ -1445,18 +1519,36 @@ SEXP happyprobs2 ( SEXP handle, SEXP marker ) {
     p = allocate_qtl_priors( q );
     compute_qtl_priors( q, p, locus, af->prior );
 
-    PROTECT( Matrix = allocMatrix( REALSXP, q->N, S2) );
+    if ( Symmetrize ) {
+      int S2 = q->S*(q->S+1)/2;
+      PROTECT( Matrix = allocMatrix( REALSXP, q->N, S2) );
 
-    for(i=0; i<q->N; i++) {
-      int j, k,m=0;
-      for(j=0;j<q->S;j++) {
-	for(k=0;k<q->S;k++,m++) {
-	  REAL(Matrix)[i+q->N*m]  = p[i][j][k].prior;
+      for(i=0; i<q->N; i++) {
+	int j, k,m=0;
+	for(j=0;j<q->S;j++) {
+	  for(k=0;k<j;k++,m++) {
+	    REAL(Matrix)[i+q->N*m]  = p[i][j][k].prior + p[i][k][j].prior;
+	  }
+	  REAL(Matrix)[i+q->N*m]  = p[i][j][j].prior;
+	  m++;
 	}
       }
+      UNPROTECT(1);
     }
-    UNPROTECT(1);
+    else {
+      int S2 = q->S*q->S;
+      PROTECT( Matrix = allocMatrix( REALSXP, q->N, S2) );
 
+      for(i=0; i<q->N; i++) {
+	int j, k,m=0;
+	for(j=0;j<q->S;j++) {
+	  for(k=0;k<q->S;k++,m++) {
+	    REAL(Matrix)[i+q->N*m]  = p[i][j][k].prior;
+	  }
+	}
+      }
+      UNPROTECT(1);
+    }
     for(i=0;i<q->N;i++) {
       int s1;
       for(s1=0;s1<q->S;s1++)
@@ -1464,7 +1556,7 @@ SEXP happyprobs2 ( SEXP handle, SEXP marker ) {
       free(p[i]);
     }
     free(p);
-
+    
   }
   return Matrix;
 }
@@ -1510,13 +1602,9 @@ SEXP happygenotype ( SEXP handle, SEXP marker ) {
   int locus = -1;
   QTL_DATA *q = validateParams( handle, marker, &locus, 0 );
   SEXP Genotype = R_NilValue;
-  SEXP G1 = R_NilValue;
-  SEXP G2 = R_NilValue;
 
   if ( locus >= 0 ) {
     ALLELE_FREQ *af = &(q->alleles->af[locus]);
-    CHROM_PAIR *genos = q->genos;
-    
     int i;
     PROTECT( Genotype = allocMatrix( STRSXP, q->N, 2 ) );
 
@@ -1541,10 +1629,8 @@ SEXP happygenotype ( SEXP handle, SEXP marker ) {
 
 SEXP happydesign( SEXP handle, SEXP marker, SEXP model ) {
 
-  double **design=NULL;
   SEXP Design = R_NilValue;
   char *mod=NULL;
-  SEXP clss, h;
   int locus = -1;
   QTL_DATA *q = validateParams( handle, marker, &locus, 1 );
 
@@ -1595,10 +1681,10 @@ SEXP happydesign( SEXP handle, SEXP marker, SEXP model ) {
       for(i=0; i<q->N; i++) {
 	int j, k, n=0;
 	for(j=0;j<q->S;j++) 
-	  REAL(Design)[i+q->N*n++]  = 2*p[i][j][j].prior;
+	  REAL(Design)[i+q->N*n++]  = p[i][j][j].prior;
 	for(j=0;j<q->S;j++) 
 	  for(k=0;k<j;k++,n++) {
-	    REAL(Design)[i+q->N*n]  = 2*(p[i][j][k].prior + p[i][k][j].prior);
+	    REAL(Design)[i+q->N*n]  = p[i][j][k].prior + p[i][k][j].prior;
 	  }
       }
       UNPROTECT(1);      
@@ -1611,7 +1697,7 @@ SEXP happydesign( SEXP handle, SEXP marker, SEXP model ) {
 	int j, k, n=0;
 	for(j=0;j<q->S;j++) 
 	  for(k=0;k<j;k++,n++) {
-	    REAL(Design)[i+q->N*n]  = 2*p[i][j][k].prior;
+	    REAL(Design)[i+q->N*n]  = p[i][j][k].prior;
 	  }
       }
       UNPROTECT(1);      
@@ -1660,10 +1746,8 @@ double phaseProb( int a1, int a2, int m1, int m2, int p1, int p2, int NA ) {
 /* HAPLOID GENOMES */
 SEXP haploid_happydesign( SEXP handle, SEXP marker ) {
 
-  double **design=NULL;
   SEXP Design = R_NilValue;
   char *mod=NULL;
-  SEXP clss, h;
   int locus = -1;
   QTL_DATA *q = validateParams( handle, marker, &locus, 1 );
 
@@ -1688,7 +1772,7 @@ SEXP haploid_happydesign( SEXP handle, SEXP marker ) {
     }
       
     for(i=0; i<q->N; i++) {
-      int j, k;
+      int j;
       for(j=0;j<q->S;j++) {
 	REAL(Design)[i+q->N*j]  = p[i][j].prior;
       }
@@ -1737,8 +1821,8 @@ double **haploid_summed_dp_matrix( QTL_DATA *qtl, int individual, double *Pr_ss,
   int start, stop, incr;
   CHROM_PAIR *genotypes = &(qtl->genos[individual]);
   ALLELES *A = qtl->alleles;
-  int m, s, t, par;
-  int p1, p2, offset;
+  int m, s, t;
+  int offset;
   double total;
   int markers = genotypes->markers;
   int strains = A->strains;
@@ -1780,7 +1864,6 @@ double **haploid_summed_dp_matrix( QTL_DATA *qtl, int individual, double *Pr_ss,
     int g1 = genotypes->chrom1[m];
     double pr_ss = Pr_ss[m+offset];
     double pr_st = Pr_st[m+offset];
-    int m1, m2, p1, p2;
     double **a;
     if ( qtl->an ) 
       a = qtl->an->pr_AtoS[individual][m];
@@ -1830,13 +1913,9 @@ QTL_PRIOR **compute_haploid_qtl_priors(  QTL_DATA *qtl, QTL_PRIOR **qp, int locu
   /* compute, for each individual, the prior probabilities of the
      different strains at the flanking markers */
 
-  int i, j, left, right;
+  int i;
   int m = locus;
-  int strains = qtl->S;
   double total;
-  double Pr_ss = qtl->alleles->Pr_ss[locus];
-  double Pr_st = qtl->alleles->Pr_st[locus];
-  double s1 = 1.0/qtl->S;
   double P[LINKAGE_STATES];
   ALLELES *A = qtl->alleles;
   double d = (A->af[locus+1].position - A->af[locus].position)/100.0;
@@ -1874,7 +1953,7 @@ QTL_PRIOR **compute_haploid_qtl_priors(  QTL_DATA *qtl, QTL_PRIOR **qp, int locu
 QTL_PRIOR **allocate_haploid_qtl_priors( QTL_DATA *qtl ) {
   
   QTL_PRIOR **qp = (QTL_PRIOR**)calloc(qtl->N,sizeof(QTL_PRIOR*));
-  int i, k;
+  int i;
   
   for(i=0;i<qtl->N;i++) {
     qp[i] = (QTL_PRIOR*)calloc(qtl->S,sizeof(QTL_PRIOR));
@@ -1883,3 +1962,11 @@ QTL_PRIOR **allocate_haploid_qtl_priors( QTL_DATA *qtl ) {
   return qp;
 }
 
+int entrycmp( const void *a, const void *b ) {
+  const PARENT_KEY *A = (PARENT_KEY*)a;
+  const PARENT_KEY *B = (PARENT_KEY*)b;
+
+  return strcmp( (const char*)A->key, (const char*)B->key );
+}
+
+    
