@@ -39,7 +39,8 @@ happy <- function( datafile, allelesfile, generations=200, phase="unknown",
   h$nam <- strain.names
   h$nam2 <- h$names.full.symmetric
   h$nam3 <- h$names.full.asymmetric
-
+  h$bp = h$map
+	
   if ( ! is.null(mapfile)) {
     map <- read.delim(mapfile)
     if ( !is.null(map$marker) && ! is.null(map$bp)) {
@@ -49,6 +50,21 @@ happy <- function( datafile, allelesfile, generations=200, phase="unknown",
     else
       stop( "incorrect column names found in mapfile ", mapfile , "\n")
   }
+
+  h$additive = list()
+  nm = length(h$markers)-1
+  h$additive$genome <- data.frame(
+                         marker     = I(as.character(h$markers))[1:nm],
+                         map        = as.numeric(h$map)[1:nm],
+                         bp         = as.numeric(h$bp)[1:nm],
+                         chromosome = I(as.character(h$chromosome))[1:nm])
+
+  h$full = list()
+  h$full$genome <- data.frame(
+                         marker     = I(as.character(h$markers))[1:nm],
+                         map        = as.numeric(h$map)[1:nm],
+                         bp         = as.numeric(h$bp)[1:nm],
+                         chromosome = I(as.character(h$chromosome))[1:nm])
   
   return(h)
 }
@@ -88,8 +104,9 @@ happy.save <- function( h, file ) {
 
                                         # C interface to return the design matrix for a marker interval
                                         # h is a happy object returned by a previous call to happy
-                                        # marker is the name of the left-hand marker in the interval, or the integer index of the marker (starting from 1)
-                                        # mode can be 'additive' or 'full'
+                                        # marker is the name of the left-hand marker in the interval, or
+					#    the integer index of the marker (starting from 1)
+                                        # model can be 'additive' or 'full'
                                         # if mergematrix is non-null then the columns of the design matrix are merged 
 
 hdesign <- function( h, marker, model='additive', mergematrix=NULL ) {
@@ -239,212 +256,6 @@ hgenotype <- function( h, marker=NULL, collapse=FALSE, sep="" ) {
   return(g)
 }
 	
-
-                                        # fit a QTL to the markers using the specified mode
-
-                                        # happy is a happy object returned by a call to happy
-                                        # markers is a array of marker names or marker indices
-                                        # mode is one of 'additive', 'full' or 'partial'
-                                        # verbose controls the amount of output
-                                        # return value is a table giving the logP values for each marker tested
-
-hfit <- function( h, markers=NULL, model='additive', mergematrix=NULL, covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0 ) {
-
-  if ( class(h) == "happy.genome" ) {
-    if ( !is.null( h[[model]] ) )
-      map <- h[[model]]$map
-    if ( is.null(markers) ) {
-      nm <- length(h[[model]]$markers)-1
-      markers <- h[[model]]$markers[1:nm]
-    }
-    if ( is.null(phenotype)) {
-      error( "phenotype must be set\n")
-    }
-  }
-  else {
-    
-    map <- h$map
-
-    if ( is.null(markers) ) 
-      markers <- h$markers[1:length(h$markers)-1]
-
-    if ( is.null(phenotype) )
-      phenotype = h$phenotype
-  }
-  
-  if ( model == 'partial' || model == 'full' ) {
-    lp <- matrix( ncol=8, nrow=length(map)-1)
-    colnames(lp) <-c('cM', 'marker', 'additive logP', 'full logP', 'partial logP', 'additive SS', 'full SS', 'partial SS')
-    offset <- 3
-    width <- 3
-    idx <- 3
-  }
-  else {
-    lp <- matrix( ncol=4, nrow=length(map)-1)
-    colnames(lp) <-c('cM', 'marker', 'additive logP', 'additive SS')
-    offset <- 3
-    width <- 1
-    idx <- 3
-  }    
-
-  permdata <- NULL
-  if ( permute > 0 ) { # permutation test
-    offset <- 6
-    width <- 2
-    
-    
-    if ( verbose ) cat ("performing permutation anaysis on ", permute, " permutations\n")
-    hf0 <- hfit( h, markers=markers, model=model, mergematrix=mergematrix, covariatematrix=covariatematrix, verbose=FALSE, family=family, permute=0 )
-    emp <- matrix( ncol=7, nrow=length(map)-1)
-    colnames(emp) <-c('cM', 'marker', 'anova.logP', 'global.pval',  'point.pval', 'global.logP', 'point.logp')
-    maxlogp <- vector(mode='numeric',length=permute)
-    logpk <- vector(mode='numeric',length=length(map)-1)
-    for(k in 1:permute) {
-      shuf <- sample(phenotype)
-      pres <- hfit( h, markers=markers, model=model, mergematrix=mergematrix, covariatematrix=covariatematrix, verbose=FALSE, phenotype=shuf, family=family, permute=0 )
-      maxlogp[k] <- max( as.numeric(pres$table[,idx]) )
-      logpk <- logpk + ifelse(pres$table[,idx] > hf0$table[,idx], 1, 0 )
-      if ( verbose ) cat(k, maxlogp[k], "\n")
-    }
-    maxlogp <- sort( maxlogp, decreasing=TRUE )
-    logpk <- logpk / permute
-    p01 <- maxlogp[as.integer(permute/100)]
-    p05 <- maxlogp[as.integer(permute/20)]
-    if ( verbose) cat( 'p01 ', p01, ' p05 ', p05 , "\n")
-    mi <- 1
-
-    for ( m in hf0$table[,"marker"]) {
-      emp[mi,4] <- NA
-      if ( mi <= nrow(hf0$table)) {
-        logp <- as.numeric(hf0$table[mi,idx])
-        n <- 0
-        if ( is.numeric(logp) ) {
-          n <- sum(ifelse(maxlogp>logp,1,0),na.rm=TRUE)
-          emp[mi,"global.pval"] <- n/permute
-        }
-      }
-      mi <- mi+1
-    }
-    logemp <- ifelse( emp[,'global.pval'] >= 1/permute , -log10(emp[,'global.pval']), log10(permute))
-    emp[,"cM"] <- hf0$table[,"cM"]
-    emp[,"marker"] <- hf0$table[,"marker"]
-    emp[,"anova.logP"] <-hf0$table[,idx]
-    emp[,"global.logP"] <- logemp
-    emp[,'point.pval'] <- logpk
-    emp[,'point.logp'] <- ifelse( logpk >= 1/permute, -log10(logpk), log10(permute))
-    permdata <- list( N=permute, p01=p01, p05=p05, permutation.dist=maxlogp, permutation.pval=emp )
-    hf0$width <- width
-    hf0$offset <- offset
-    hf0$permdata <- permdata
-    return(hf0);
-  }
-  else {
-    i <- 1
-    maxp <- 0
-    maxm <- NA
-    maxSS <- NA
-    
-    for( m in markers ) {
-      if ( verbose ) cat( "\n\n****** ", i, "marker interval ",  m, "\n\n" )
-      if ( model == 'partial' || model == 'full' ) {
-        if ( ! is.null(full<- hdesign( h, m, model='full', mergematrix=mergematrix )) ) {
-          additive <- hdesign( h, m, model='additive', mergematrix=mergematrix )
-          if ( is.null(covariatematrix) ) {
-            cfit <- glmfit( phenotype ~ 1, family=family)
-            ffit <- glmfit( phenotype ~ full , family=family)
-            afit <- glmfit( phenotype ~ additive , family=family)
-          }
-          else {
-            cfit <- glmfit( phenotype ~ covariatematrix , family=family)
-            full <- cbind(covariatematrix, full )
-            ffit <- glmfit( phenotype ~ full , family=family)
-            additive <- cbind(covariatematrix, additive )
-            afit <- glmfit( phenotype ~ additive , family=family)
-          }
-          
-          if ( family == "gaussian") {
-            an <- anova( cfit, afit, ffit );
-            if ( verbose ) print(an)
-            logP <- -log(an[[6]])/log(10)
-          
-            an2 <- anova( cfit, ffit );
-            logP2 <- -log(an2[[6]])/log(10)
-          }
-          else {
-            an <- anova( cfit, afit, ffit, test="Chisq" );
-            if ( verbose ) print(an)
-            logP <- -log(an[[5]])/log(10)
-          
-            an2 <- anova( cfit, ffit, test="Chisq" );
-            logP2 <- -log(an2[[5]])/log(10)
-          }
-
-          if ( ! is.na(logP[2]) && logP[2] > maxp ) {
-            maxp <- logP[2]
-            maxm <- m
-            maxSS <- an2[[5]][2]
-          }
-
-          lp[i,1] <- (map[i]+map[i+1])/2
-          lp[i,2] = m
-          lp[i,3] <- logP[2]
-          lp[i,4] <- logP2[2]
-          lp[i,5] <- logP[3]
-          lp[i,6] <- an[[4]][2]
-          lp[i,7] <- an2[[4]][2]
-          lp[i,8] <- an[[4]][3]
-          i <- i+1
-        }
-      }
-      else {
-        if ( ! is.null(d<- hdesign( h, m, model='additive', mergematrix=mergematrix )) ) {
-          if ( is.null(covariatematrix) ) {
-            cfit <- glmfit( phenotype ~ 1 , family=family)
-            afit <- glmfit( phenotype ~ d , family=family)
-          }
-          else {
-            cfit <- glmfit( phenotype ~ covariatematrix )
-            d <- cbind( covariatematrix, d )
-            afit <- glmfit( phenotype ~ d )
-          }
-
-          if ( family=="gaussian") {
-            an <- anova( cfit, afit )
-            logP <- -log( an[[6]])/log(10)
-          }
-          else {
-            an <- anova( cfit, afit, test="Chisq" )
-#            print(an)
-            logP <- -log( an[[5]])/log(10)
-#            print(logP)
-          }
-            
-          if ( verbose ) {
-            print( an )
-            strain.effects( h, afit )
-          }
-
-
-
-          if ( ! is.na(logP[2]) && logP[2] > maxp ) {
-            maxp <- logP[2]
-            maxm <- m
-            maxSS <- an[[4]][2]
-          }
-
-          lp[i,1] <- (map[i]+map[i+1])/2
-          lp[i,2] <- m
-          lp[i,3] <- logP[2]
-          lp[i,4] <- an[[4]][2]
-
-          i <- i+1
-        }
-      }
-    }
-    return(list( table=lp, model=model, family=family, test='hfit', offset=offset, width=width, maxp=maxp, maxm=maxm, maxSS=maxSS, permdata=NULL ))
-  }
-}
-
                                         # Calculate the T-tests for comparing strain effects.
                                         # Called from hfit: only suited to the additive model at present
 
@@ -684,120 +495,6 @@ mfit <- function( happy, markers=NULL, model='additive', mergematrix=NULL, covar
   }
   list( table=lp, model=model, test='mfit', offset=3, width=3, maxp=maxp, maxm=maxm )
 }
-
-                                        # create plots of the result returned by hfit, mfit
-
-happyplot <- function ( fit, mode='logP', labels=NULL, xlab='cM', ylab=NULL, main=NULL, t='s', pch=20, ... ) {
-
-  def.par <- par(no.readonly=TRUE)
-  plot.new()
-
-  model <- fit$model
-  lp <- na.omit(fit$table)
-  test <- fit$test
-  offset <- fit$offset
-  plots <- fit$width
-
-                                        # title and labels
-  if ( ! is.null( fit$permdata ) ) {
-    mode <- 'permutation'
-    main <- 'permutation plot'
-    ylab <- 'permutation logp'
-    lp <- na.omit(fit$permdata$permutation.pval)
-  }
-  else if ( mode == 'logP' ) {
-    ylab <- mode
-    if ( is.null(main) )
-      main <- 'log probability plot'
-  }
-  else {
-    ylab <- 'SS'
-    if ( is.null(main) )
-      main <- 'Fitting Sums of Squares plot'
-    offset <- offset + plots 
-  }
-
-                                        # the y-axis range
-  
-  mx <- 0
-  
-  rangemax <- offset + plots-1 
-  for( i in offset:rangemax ) {
-    r <- range( as.numeric(lp[,i]))
-    mx <- range(c( mx, r))
-  }
-  ymax <- mx[2]
-  
-                                        # work out how much vertical space to allocate to the marker labels, if present
-  
-  if ( ! is.null( labels ) ) {
-    ps <- par('ps')
-    par(ps=8)
-    lwidth <- strwidth( as.character(labels$text), units='inches' );
-    par(ps=ps)
-    lr <- range(lwidth)
-    H <- lr[2]*1.2
-    
-    area <- par( 'fin' ) # width and height in inches of figure
-    mai <- par( 'mai' ) # margins in inches 
-    lambda <- (area[2]-mai[1]-mai[3]-H)/mx[2] # expansion factor
-
-    h <- H/lambda
-    mx[2] <- mx[2] + h
-    
-
-  }
-
-  
-  colours <- c( "black", "red", "blue", "green", "orange")
-  cnames = colnames(lp );
-  par(col="black")
-  par(lwd=2)
-  plot( x=lp[,1], y=lp[,offset],  ylim=mx,main=main,xlab=xlab,ylab=ylab, t=t, pch=pch, ...)
-
-  rx = range( as.numeric( lp[,1] ) )
-  lx <- rx[2]-rx[1]
-  tx <- c( rx[1] + 0.02*(lx) )
-
-  ty <- c( 0.95*mx[2] ) 
-  text( tx, ty, cnames[offset], adj=c(0))
-  wd <- strwidth(cnames)
-  buff <- strwidth("spa")
-
-  if ( rangemax > offset ) 
-    for( i in (offset+1):rangemax ) {
-      par(col=colours[i-offset+1])
-      tx <- c( tx[1] + wd[i-1] + buff[1]) 
-      text( tx, ty, cnames[i], adj=c(0))
-      par(ps=1)
-      lines( x=lp[,1], y=lp[,i], t=t, pch=pch)
-      par(ps=12)
-    }
-
-
-  par(col="black")
-
-                                        # the labels
-  
-  if ( ! is.null(labels) ) {
-    par(srt=270)
-    par(adj=0)
-    par(ps=8)
-    y <- rep( mx[2]*0.99, length(labels$text) )
-    text( labels$POSITION, y, as.character(labels$text) )
-    par(lwd=1)
-    par(col='black')
-    x <- labels$POSITION
-    for( m in x) {
-      lines( x=c( m,m ), y=c(0,ymax) )
-    }
-    par(srt=0)
-  }
-
-  par(def.par)
-  NULL
-}
-
 
                                         # fit two markers simultaneously, assuming additive model
 

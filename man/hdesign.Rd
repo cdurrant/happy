@@ -29,8 +29,8 @@ hgenotype ( h, marker, collapse=FALSE, sep="" )
 \value{ hdesign() returns a design matrix \eqn{d_{ij}}{d[i,j]}, in which the \eqn{i}th row corresponds to
   the subject \eqn{i}, and the \eqn{j}th column to the corresponding strain or
   combination of strains or merged strains.
- \hprob() returns a matrix \eqn(p_{ix}{p[i,x]}, in which the \eqn{i} th row corresponds to the subject \eqn{i}, and the \eqn{x=s*S+t} th column contains the probability that the ancestral strains are \eqn{s,t} where \eqn{S} is the total number of strains.
- \hgenotype() returns a \eqn{Nx2} matrix \eqn(g_{ix}{g[i,x]} in which
+ hprob() returns a matrix \eqn{p_{ix}{p[i,x]}}, in which the \eqn{i} the row corresponds to the subject \eqn{i}, and the \eqn{x=s*S+t} th column contains the probability that the ancestral strains are \eqn{s,t} where \eqn{S} is the total number of strains.
+ hgenotype() returns a \eqn{Nx2} matrix \eqn{g_{ix}{g[i,x]}} in which
  the \eqn{i} th row corresponds to the subject \eqn{i}, and column 1
  contains the first allele and column 2 the second allele at the marker
  specified, or (if \code{collapse=TRUE}) a vector of genotypes with the
