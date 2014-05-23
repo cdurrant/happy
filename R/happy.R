@@ -39,7 +39,8 @@ happy <- function( datafile, allelesfile, generations=200, phase="unknown",
   h$nam <- strain.names
   h$nam2 <- h$names.full.symmetric
   h$nam3 <- h$names.full.asymmetric
-
+  h$bp = h$map
+	
   if ( ! is.null(mapfile)) {
     map <- read.delim(mapfile)
     if ( !is.null(map$marker) && ! is.null(map$bp)) {
@@ -49,6 +50,21 @@ happy <- function( datafile, allelesfile, generations=200, phase="unknown",
     else
       stop( "incorrect column names found in mapfile ", mapfile , "\n")
   }
+
+  h$additive = list()
+  nm = length(h$markers)-1
+  h$additive$genome <- data.frame(
+                         marker     = I(as.character(h$markers))[1:nm],
+                         map        = as.numeric(h$map)[1:nm],
+                         bp         = as.numeric(h$bp)[1:nm],
+                         chromosome = I(as.character(h$chromosome))[1:nm])
+
+  h$full = list()
+  h$full$genome <- data.frame(
+                         marker     = I(as.character(h$markers))[1:nm],
+                         map        = as.numeric(h$map)[1:nm],
+                         bp         = as.numeric(h$bp)[1:nm],
+                         chromosome = I(as.character(h$chromosome))[1:nm])
   
   return(h)
 }
@@ -88,8 +104,9 @@ happy.save <- function( h, file ) {
 
                                         # C interface to return the design matrix for a marker interval
                                         # h is a happy object returned by a previous call to happy
-                                        # marker is the name of the left-hand marker in the interval, or the integer index of the marker (starting from 1)
-                                        # mode can be 'additive' or 'full'
+                                        # marker is the name of the left-hand marker in the interval, or
+					#    the integer index of the marker (starting from 1)
+                                        # model can be 'additive' or 'full'
                                         # if mergematrix is non-null then the columns of the design matrix are merged 
 
 hdesign <- function( h, marker, model='additive', mergematrix=NULL ) {

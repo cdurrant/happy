@@ -28,7 +28,7 @@
 }
 \usage{
 hfit( h, markers=NULL, model='additive', mergematrix=NULL,
-covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0 )
+covariatematrix=NULL, verbose=FALSE, phenotype=NULL, family='gaussian', permute=0, chromosome=NULL )
 
 hfit.sequential( h, threshold=2,  markers=NULL, model='additive',
 mergematrix=NULL, covariatematrix=NULL, verbose=FALSE, family='gaussian')
@@ -84,6 +84,8 @@ normalise(values)
     (hfit() only ). }
   \item{values}{a numeric vector of phenotype values to transform into
     normal deviates (normalise() only) }
+  \item{chromosome}{assignment of markers to individual chromosomes, by
+    default falling back to chromosome attribute of happy object passed to hfit}
 }
 
 
@@ -110,6 +112,7 @@ normalise(values)
     \item{permdata}{ a list containing the results of the permutation
       analysis, or NULL if permute=0. The list contains the following
       elements:
+	\itemize{
       \item{N}{ The number of permutations }
       \item{permutation.dist}{ A vector containing sorted ANOVA logP values from the N
 	permutations. These values can be used to estimate the shape of
@@ -127,6 +130,7 @@ normalise(values)
 	permutation logP at the marker interval that exceed the logP for
 	that interval.
       }
+	}
       }
 
 	 

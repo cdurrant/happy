@@ -294,13 +294,15 @@ QTL_FIT *allocate_qtl_fit( QTL_FIT *fit, int N, int strains ) {
 QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use_parents, int ped_format, char *missingCode ) {
 
   QTL_DATA *q = (QTL_DATA*)calloc(1,sizeof(QTL_DATA));
-  int max_N = 3000;
+  int max_N = 10000;
   int m;
-  char *buffer = (char*)calloc(1000000,sizeof(char));
+  int bufsize = 100+a->markers*20;
+  char *buffer = (char*)calloc(bufsize,sizeof(char));
   char **mother = NULL;
   char **father= NULL;
   double NaN = nan("char-sequence");
-
+  int *pcount;
+  int nparents=0;
   q->alleles = a;
   q->filename = (char*)strdup(name);
   q->N = 0;
@@ -470,14 +472,14 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 
   Rprintf( "status %d\n", use_parents || ped_format );
   if ( use_parents || ped_format ) {
-    int i;
+    int i, nparents=0;
     PARENT_KEY e;
     PARENT_KEY *f;
     int both = 0;
 
     q->mother = (int*)calloc(q->N, sizeof(int));
     q->father = (int*)calloc(q->N, sizeof(int));
-
+    pcount = (int*)calloc(q->N, sizeof(int));
     
     if ( hcreate(q->N) == 0 ) 
       error("Could not create hash table");
@@ -502,15 +504,24 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 	q->father[i] = (int)((long)(f->data));
       else 
 	q->father[i] = -1;
-      if ( q->mother[i] > -1 && q->father[i] > -1 )
+      if ( q->mother[i] > -1 && q->father[i] > -1 ) {
 	both++;
+	pcount[q->mother[i]]++;
+	pcount[q->father[i]]++;
+      }
     }
+
+    for( i=0;i<q->N;i++)
+      nparents += pcount[i]>0
 
     hdestroy();
     free(mother);
     free(father);
+    free(pcount);
 
     Rprintf( "Number of subjects with two parents: %-5d\n", both );
+    Rprintf( "Number of parents in nuclear families: %-5d\n", nparents );
+
   }
 #else
 
@@ -522,6 +533,7 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 
     q->mother = (int*)calloc(q->N, sizeof(int));
     q->father = (int*)calloc(q->N, sizeof(int));
+    pcount = (int*)calloc(q->N, sizeof(int));
 
     for(i=0;i<q->N;i++) {
       sorted[i].key = q->name[i];
@@ -546,19 +558,31 @@ QTL_DATA *read_qtl_data( FILE *fp, char *name, ALLELES *a,  int verbose, int use
 	q->father[i] = f->id;
       else 
 	q->father[i] = -1;
-      if ( q->mother[i] > -1 && q->father[i] > -1 )
+      if ( q->mother[i] > -1 && q->father[i] > -1 ) {
 	both++;
+	pcount[q->mother[i]]++;
+	pcount[q->father[i]]++;
+      }
+
     }
+
+    for( i=0;i<q->N;i++)
+      nparents += pcount[i]>0;
 
     free(mother);
     free(father);
     free(sorted);
+    free(pcount);
 
     Rprintf( "Number of subjects with two parents: %-5d\n", both );
+    Rprintf( "Number of parents in nuclear families: %-5d\n", nparents );
+
   }
 #endif
 
+
   fit_null_qtl_model( q );
+
   free(buffer);
   return q;
 
